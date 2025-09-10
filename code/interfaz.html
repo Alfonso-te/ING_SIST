@@ -1,775 +1,407 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatBot Interface</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .chat-container {
-            width: 90%;
-            max-width: 800px;
-            height: 90vh;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            padding: 20px;
-            text-align: center;
-            color: white;
-            position: relative;
-        }
-
-        .chat-header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .chat-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .avatar-config {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .avatar-preview {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .avatar-preview:hover {
-            transform: scale(1.1);
-        }
-
-        .avatar-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .upload-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .upload-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
-
-        .message {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: flex-end;
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message-content {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            max-width: 70%;
-        }
-
-        .message.user .message-content {
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: white;
-            flex-shrink: 0;
-            overflow: hidden;
-            border: 2px solid #e0e0e0;
-        }
-
-        .message.bot .message-avatar {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-        }
-
-        .message-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .message-bubble {
-            padding: 12px 18px;
-            border-radius: 18px;
-            font-size: 14px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            flex: 1;
-        }
-
-        .message.user .message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 18px 4px 18px 18px;
-        }
-
-        .message.bot .message-bubble {
-            background: #f1f3f4;
-            color: #333;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px 18px 18px 18px;
-        }
-
-        .message-info {
-            font-size: 11px;
-            color: #999;
-            margin: 5px 10px 0;
-        }
-
-        .message.user .message-info {
-            text-align: right;
-        }
-
-        .typing-indicator {
-            display: none;
-            padding: 12px 18px;
-            background: #f1f3f4;
-            border-radius: 18px;
-            margin-bottom: 20px;
-            max-width: 70%;
-        }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dots span {
-            width: 8px;
-            height: 8px;
-            background: #999;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-
-        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
-        }
-
-        .chat-input-container {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .chat-input-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 12px 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .chat-input:focus {
-            border-color: #667eea;
-        }
-
-        .send-button {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .send-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .send-button:active {
-            transform: translateY(0);
-        }
-
-        .send-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .welcome-message {
-            text-align: center;
-            color: #999;
-            padding: 40px 20px;
-            font-style: italic;
-        }
-
-        .avatar-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .avatar-modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .modal-content h3 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .avatar-options {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .avatar-option {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 3px solid #e0e0e0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            overflow: hidden;
-        }
-
-        .avatar-option:hover {
-            border-color: #667eea;
-            transform: scale(1.1);
-        }
-
-        .avatar-option.selected {
-            border-color: #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
-        }
-
-        .avatar-option img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .modal-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .modal-btn.primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .modal-btn.secondary {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        /* Scrollbar personalizado */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 10px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #999;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .chat-container {
-                width: 95%;
-                height: 95vh;
-                border-radius: 15px;
-            }
-
-            .message-content {
-                max-width: 85%;
-            }
-
-            .chat-header h1 {
-                font-size: 20px;
-            }
-
-            .avatar-config {
-                position: relative;
-                top: auto;
-                right: auto;
-                justify-content: center;
-                margin-top: 10px;
-            }
-
-            .avatar-options {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatBot Interface (Eliza integrado)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .chat-container {
+      width: 90%;
+      max-width: 800px;
+      height: 90vh;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      padding: 20px;
+      text-align: center;
+      color: white;
+      position: relative;
+    }
+    .chat-header h1 { font-size: 24px; margin-bottom: 5px; }
+    .chat-header p { opacity: 0.9; font-size: 14px; }
+    .avatar-config {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .avatar-preview:hover { transform: scale(1.1); }
+    .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .file-input { display: none; }
+    .upload-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .upload-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; scroll-behavior: smooth; }
+    .message { margin-bottom: 20px; display: flex; align-items: flex-end; animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    .message.user { justify-content: flex-end; }
+    .message-content { display: flex; align-items: flex-end; gap: 10px; max-width: 70%; }
+    .message.user .message-content { flex-direction: row-reverse; }
+    .message-avatar {
+      width: 35px; height: 35px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: white; flex-shrink: 0; overflow: hidden;
+      border: 2px solid #e0e0e0;
+    }
+    .message.bot .message-avatar { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+    .message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .message-bubble { padding: 12px 18px; border-radius: 18px; font-size: 14px; line-height: 1.4; word-wrap: break-word; flex: 1; }
+    .message.user .message-bubble { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; border-radius: 18px 4px 18px 18px; }
+    .message.bot .message-bubble { background: #f1f3f4; color: #333; border: 1px solid #e0e0e0; border-radius: 4px 18px 18px 18px; }
+    .message-info { font-size: 11px; color: #999; margin: 5px 10px 0; }
+    .message.user .message-info { text-align: right; }
+    .typing-indicator { display: none; padding: 12px 18px; background: #f1f3f4; border-radius: 18px; margin: 0 20px 20px; max-width: 70%; }
+    .typing-dots { display: flex; gap: 4px; }
+    .typing-dots span { width: 8px; height: 8px; background: #999; border-radius: 50%; animation: typing 1.4s infinite ease-in-out; }
+    .typing-dots span:nth-child(1){ animation-delay:-0.32s; }
+    .typing-dots span:nth-child(2){ animation-delay:-0.16s; }
+    @keyframes typing { 0%,80%,100%{transform:scale(0.8);opacity:0.5;} 40%{transform:scale(1);opacity:1;} }
+    .chat-input-container { padding: 20px; background: white; border-top: 1px solid #e0e0e0; }
+    .chat-input-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .chat-input { flex: 1; min-width: 200px; padding: 12px 18px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 14px; outline: none; transition: border-color 0.3s ease; }
+    .chat-input:focus { border-color: #667eea; }
+    .send-button {
+      padding: 12px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .send-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.3); }
+    .send-button:active { transform: translateY(0); }
+    .send-button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .welcome-message { text-align: center; color: #999; padding: 40px 20px; font-style: italic; }
+    .avatar-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .avatar-modal.active { display: flex; }
+    .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 400px; width: 90%; }
+    .modal-content h3 { margin-bottom: 20px; color: #333; }
+    .avatar-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+    .avatar-option { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #e0e0e0; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden; }
+    .avatar-option:hover { border-color: #667eea; transform: scale(1.1); }
+    .avatar-option.selected { border-color: #667eea; box-shadow: 0 0 10px rgba(102,126,234,0.3); }
+    .avatar-option img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+    .modal-btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+    .modal-btn.primary { background: #667eea; color: white; }
+    .modal-btn.secondary { background: #e0e0e0; color: #333; }
+    /* Scrollbar */
+    .chat-messages::-webkit-scrollbar { width: 6px; }
+    .chat-messages::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+    .chat-messages::-webkit-scrollbar-thumb:hover { background: #999; }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .chat-container { width: 95%; height: 95vh; border-radius: 15px; }
+      .message-content { max-width: 85%; }
+      .chat-header h1 { font-size: 20px; }
+      .avatar-config { position: relative; top: auto; right: auto; justify-content: center; margin-top: 10px; }
+      .avatar-options { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>🤖 ChatBot Assistant</h1>
-            <p>¡Hola! Estoy aquí para ayudarte</p>
-            
-            <div class="avatar-config">
-                <div class="avatar-preview" id="userAvatarPreview" onclick="openAvatarModal()">
-                    👤
-                </div>
-                <button class="upload-btn" onclick="openAvatarModal()">
-                    Cambiar Avatar
-                </button>
-            </div>
-        </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <div class="welcome-message">
-                Escribe un mensaje para comenzar la conversación...
-            </div>
-        </div>
-
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-
-        <div class="chat-input-container">
-            <form class="chat-input-form" id="chatForm">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="messageInput" 
-                    placeholder="Escribe tu mensaje aquí..." 
-                    autocomplete="off"
-                    maxlength="500"
-                >
-                <button type="submit" class="send-button" id="sendButton">
-                    Enviar
-                </button>
-            </form>
-        </div>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h1>🤖 ChatBot Assistant</h1>
+      <p>¡Hola! Estoy aquí para ayudarte</p>
+      <div class="avatar-config">
+        <div class="avatar-preview" id="userAvatarPreview" onclick="openAvatarModal()">👤</div>
+        <button class="upload-btn" onclick="openAvatarModal()">Cambiar Avatar</button>
+      </div>
     </div>
 
-    <!-- Modal para selección de avatar -->
-    <div class="avatar-modal" id="avatarModal">
-        <div class="modal-content">
-            <h3>Selecciona tu Avatar</h3>
-            
-            <div class="avatar-options" id="avatarOptions">
-                <!-- Avatares por defecto -->
-                <div class="avatar-option" data-avatar="👤">👤</div>
-                <div class="avatar-option" data-avatar="👨">👨</div>
-                <div class="avatar-option" data-avatar="👩">👩</div>
-                <div class="avatar-option" data-avatar="🧑">🧑</div>
-                <div class="avatar-option" data-avatar="👦">👦</div>
-                <div class="avatar-option" data-avatar="👧">👧</div>
-                <div class="avatar-option" data-avatar="🤵">🤵</div>
-                <div class="avatar-option" data-avatar="👸">👸</div>
-                <div class="avatar-option" data-avatar="🦸">🦸</div>
-            </div>
-
-            <input type="file" id="avatarFileInput" class="file-input" accept="image/*,image/gif" onchange="handleAvatarUpload(event)">
-            
-            <button class="upload-btn" onclick="document.getElementById('avatarFileInput').click()" style="margin: 10px 0; padding: 10px 20px;">
-                📁 Subir Imagen/GIF
-            </button>
-
-            <div class="modal-buttons">
-                <button class="modal-btn primary" onclick="saveAvatar()">Guardar</button>
-                <button class="modal-btn secondary" onclick="closeAvatarModal()">Cancelar</button>
-            </div>
-        </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="welcome-message">Escribe un mensaje para comenzar la conversación...</div>
     </div>
 
-    <script>
-        class ChatBot {
-            constructor() {
-                this.chatMessages = document.getElementById('chatMessages');
-                this.messageInput = document.getElementById('messageInput');
-                this.sendButton = document.getElementById('sendButton');
-                this.chatForm = document.getElementById('chatForm');
-                this.typingIndicator = document.getElementById('typingIndicator');
-                
-                this.userAvatar = '👤';
-                this.botAvatar = '🤖';
-                this.selectedAvatar = '👤';
-                this.selectedAvatarType = 'emoji';
-                this.selectedAvatarData = null;
-                
-                this.responses = [
-                    "¡Interesante pregunta! Déjame pensar en eso...",
-                    "Entiendo lo que me dices. Mi respuesta es...",
-                    "¡Excelente! Basándome en tu mensaje...",
-                    "Gracias por preguntar. Te puedo decir que...",
-                    "Es una buena observación. Creo que...",
-                    "Me parece muy relevante tu punto. Considero que...",
-                    "¡Perfecto! Sobre ese tema puedo comentarte...",
-                    "Muy buena pregunta. Mi perspectiva es...",
-                    "Entiendo tu inquietud. Te explico...",
-                    "¡Genial! Respecto a eso..."
-                ];
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>
 
-                this.init();
-            }
+    <div class="chat-input-container">
+      <form class="chat-input-form" id="chatForm">
+        <input type="text" class="chat-input" id="messageInput" placeholder="Escribe tu mensaje aquí..." autocomplete="off" maxlength="500" />
+        <button type="submit" class="send-button" id="sendButton">Enviar</button>
+        <button type="button" class="send-button" id="resetBtn" onclick="chatBot.resetEliza()">Reiniciar</button>
+      </form>
+    </div>
+  </div>
 
-            init() {
-                this.chatForm.addEventListener('submit', (e) => this.handleSubmit(e));
-                this.messageInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.handleSubmit(e);
-                    }
-                });
+  <!-- Modal para selección de avatar -->
+  <div class="avatar-modal" id="avatarModal">
+    <div class="modal-content">
+      <h3>Selecciona tu Avatar</h3>
+      <div class="avatar-options" id="avatarOptions">
+        <div class="avatar-option" data-avatar="👤">👤</div>
+        <div class="avatar-option" data-avatar="👨">👨</div>
+        <div class="avatar-option" data-avatar="👩">👩</div>
+        <div class="avatar-option" data-avatar="🧑">🧑</div>
+        <div class="avatar-option" data-avatar="👦">👦</div>
+        <div class="avatar-option" data-avatar="👧">👧</div>
+        <div class="avatar-option" data-avatar="🤵">🤵</div>
+        <div class="avatar-option" data-avatar="👸">👸</div>
+        <div class="avatar-option" data-avatar="🦸">🦸</div>
+      </div>
+      <input type="file" id="avatarFileInput" class="file-input" accept="image/*,image/gif" onchange="handleAvatarUpload(event)" />
+      <button class="upload-btn" onclick="document.getElementById('avatarFileInput').click()" style="margin: 10px 0; padding: 10px 20px;">📁 Subir Imagen/GIF</button>
+      <div class="modal-buttons">
+        <button class="modal-btn primary" onclick="saveAvatar()">Guardar</button>
+        <button class="modal-btn secondary" onclick="closeAvatarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
-                // Cargar avatar guardado
-                this.loadSavedAvatar();
+  <!-- Eliza: librerías -->
+  <script src="elizabot.js"></script>
+  <script src="elizadata.js"></script>
 
-                // Focus automático en el input
-                this.messageInput.focus();
+  <script>
+    class ChatBot {
+      constructor() {
+        this.chatMessages = document.getElementById('chatMessages');
+        this.messageInput = document.getElementById('messageInput');
+        this.sendButton = document.getElementById('sendButton');
+        this.chatForm = document.getElementById('chatForm');
+        this.typingIndicator = document.getElementById('typingIndicator');
 
-                // Event listeners para opciones de avatar
-                this.setupAvatarOptions();
-            }
+        this.userAvatar = '👤';
+        this.botAvatar = '🤖';
+        this.selectedAvatar = '👤';
+        this.selectedAvatarType = 'emoji';
+        this.selectedAvatarData = null;
 
-            setupAvatarOptions() {
-                const avatarOptions = document.querySelectorAll('.avatar-option');
-                avatarOptions.forEach(option => {
-                    option.addEventListener('click', () => {
-                        // Remover selección anterior
-                        avatarOptions.forEach(opt => opt.classList.remove('selected'));
-                        // Agregar selección actual
-                        option.classList.add('selected');
-                        
-                        this.selectedAvatar = option.dataset.avatar;
-                        this.selectedAvatarType = 'emoji';
-                        this.selectedAvatarData = null;
-                    });
-                });
-            }
+        // Instancia de Eliza
+        this.eliza = new ElizaBot(); // usa new ElizaBot(true) para desactivar aleatoriedad
 
-            handleSubmit(e) {
-                e.preventDefault();
-                const message = this.messageInput.value.trim();
-                
-                if (message) {
-                    this.addMessage(message, 'user');
-                    this.messageInput.value = '';
-                    this.showTypingIndicator();
-                    
-                    // Simular respuesta del bot con "pensamiento"
-                    this.generateBotResponse(message);
-                }
-            }
+        this.init();
+      }
 
-            addMessage(text, sender) {
-                // Remover mensaje de bienvenida si existe
-                const welcomeMessage = this.chatMessages.querySelector('.welcome-message');
-                if (welcomeMessage) {
-                    welcomeMessage.remove();
-                }
-
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${sender}`;
-                
-                const messageContent = document.createElement('div');
-                messageContent.className = 'message-content';
-                
-                // Avatar
-                const avatarDiv = document.createElement('div');
-                avatarDiv.className = 'message-avatar';
-                
-                if (sender === 'user') {
-                    if (this.userAvatar.startsWith('data:')) {
-                        const img = document.createElement('img');
-                        img.src = this.userAvatar;
-                        avatarDiv.appendChild(img);
-                    } else {
-                        avatarDiv.textContent = this.userAvatar;
-                    }
-                } else {
-                    avatarDiv.textContent = this.botAvatar;
-                }
-                
-                // Burbuja de mensaje
-                const bubbleDiv = document.createElement('div');
-                bubbleDiv.className = 'message-bubble';
-                bubbleDiv.textContent = text;
-                
-                messageContent.appendChild(avatarDiv);
-                messageContent.appendChild(bubbleDiv);
-                
-                const timeDiv = document.createElement('div');
-                timeDiv.className = 'message-info';
-                timeDiv.textContent = this.getCurrentTime();
-                
-                messageDiv.appendChild(messageContent);
-                messageDiv.appendChild(timeDiv);
-                
-                this.chatMessages.appendChild(messageDiv);
-                this.scrollToBottom();
-            }
-
-            generateBotResponse(userMessage) {
-                let response = this.getRandomResponse();
-                
-                // Respuestas más específicas según palabras clave
-                const lowerMessage = userMessage.toLowerCase();
-                
-                if (lowerMessage.includes('hola') || lowerMessage.includes('buenos días') || lowerMessage.includes('buenas tardes')) {
-                    response = "¡Hola! Es un placer saludarte. ¿En qué puedo ayudarte hoy?";
-                } else if (lowerMessage.includes('adiós') || lowerMessage.includes('chao') || lowerMessage.includes('hasta luego')) {
-                    response = "¡Hasta luego! Ha sido genial conversar contigo. ¡Que tengas un excelente día!";
-                } else if (lowerMessage.includes('ayuda') || lowerMessage.includes('help')) {
-                    response = "¡Por supuesto! Estoy aquí para ayudarte. Puedes preguntarme cualquier cosa y haré mi mejor esfuerzo por responderte.";
-                } else if (lowerMessage.includes('nombre') || lowerMessage.includes('quien eres')) {
-                    response = "Soy tu asistente virtual ChatBot. ¡Estoy aquí para conversar contigo y ayudarte en lo que necesites!";
-                } else if (lowerMessage.includes('gracias')) {
-                    response = "¡De nada! Es un placer poder ayudarte. ¿Hay algo más en lo que pueda asistirte?";
-                } else if (lowerMessage.includes('como estas')) {
-                    response = "¡Estoy funcionando perfectamente! Gracias por preguntar. ¿Cómo estás tú?";
-                } else if (lowerMessage.includes('avatar')) {
-                    response = "¡Me gusta tu avatar! Puedes cambiarlo cuando quieras haciendo clic en el botón 'Cambiar Avatar' en la parte superior.";
-                }
-                
-                this.addMessage(response, 'bot');
-            }
-
-            getRandomResponse() {
-                return this.responses[Math.floor(Math.random() * this.responses.length)];
-            }
-
-            showTypingIndicator() {
-                this.typingIndicator.style.display = 'block';
-                this.scrollToBottom();
-                this.sendButton.disabled = true;
-            }
-
-            hideTypingIndicator() {
-                this.typingIndicator.style.display = 'none';
-                this.sendButton.disabled = false;
-                this.messageInput.focus();
-            }
-
-            getCurrentTime() {
-                const now = new Date();
-                return now.toLocaleTimeString('es-ES', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            }
-
-            scrollToBottom() {
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-            }
-
-            loadSavedAvatar() {
-                const savedAvatar = this.userAvatar;
-                const preview = document.getElementById('userAvatarPreview');
-                
-                if (savedAvatar.startsWith('data:')) {
-                    const img = document.createElement('img');
-                    img.src = savedAvatar;
-                    preview.innerHTML = '';
-                    preview.appendChild(img);
-                } else {
-                    preview.textContent = savedAvatar;
-                }
-            }
-
-            saveUserAvatar() {
-                if (this.selectedAvatarType === 'image' && this.selectedAvatarData) {
-                    this.userAvatar = this.selectedAvatarData;
-                } else {
-                    this.userAvatar = this.selectedAvatar;
-                }
-                this.loadSavedAvatar();
-            }
-        }
-
-        // Variable global para el chatbot
-        let chatBot;
-
-        // Funciones para el modal de avatar
-        function openAvatarModal() {
-            document.getElementById('avatarModal').classList.add('active');
-        }
-
-        function closeAvatarModal() {
-            document.getElementById('avatarModal').classList.remove('active');
-        }
-
-        function handleAvatarUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Crear opción de avatar personalizado
-                    const avatarOptions = document.getElementById('avatarOptions');
-                    
-                    // Remover avatar personalizado anterior si existe
-                    const customAvatar = avatarOptions.querySelector('.custom-avatar');
-                    if (customAvatar) {
-                        customAvatar.remove();
-                    }
-                    
-                    // Crear nuevo avatar personalizado
-                    const customOption = document.createElement('div');
-                    customOption.className = 'avatar-option custom-avatar selected';
-                    
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    customOption.appendChild(img);
-                    
-                    // Remover selección de otros avatares
-                    document.querySelectorAll('.avatar-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    
-                    avatarOptions.appendChild(customOption);
-                    
-                    // Configurar datos del avatar seleccionado
-                    chatBot.selectedAvatarType = 'image';
-                    chatBot.selectedAvatarData = e.target.result;
-                    chatBot.selectedAvatar = 'custom';
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function saveAvatar() {
-            chatBot.saveUserAvatar();
-            closeAvatarModal();
-        }
-
-        // Inicializar el chatbot cuando se carga la página
-        document.addEventListener('DOMContentLoaded', () => {
-            chatBot = new ChatBot();
+      init() {
+        this.chatForm.addEventListener('submit', (e) => this.handleSubmit(e));
+        this.messageInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.handleSubmit(e);
+          }
         });
-    </script>
+
+        this.loadSavedAvatar();
+        this.messageInput.focus();
+        this.setupAvatarOptions();
+
+        // Mensaje inicial de Eliza
+        const initial = this.eliza.getInitial();
+        if (initial) this.addMessage(initial, 'bot');
+      }
+
+      setupAvatarOptions() {
+        const avatarOptions = document.querySelectorAll('.avatar-option');
+        avatarOptions.forEach(option => {
+          option.addEventListener('click', () => {
+            avatarOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            this.selectedAvatar = option.dataset.avatar;
+            this.selectedAvatarType = 'emoji';
+            this.selectedAvatarData = null;
+          });
+        });
+      }
+
+      handleSubmit(e) {
+        e.preventDefault();
+        const message = this.messageInput.value.trim();
+        if (!message) return;
+
+        this.addMessage(message, 'user');
+        this.messageInput.value = '';
+        this.showTypingIndicator();
+
+        // Genera respuesta con Eliza con un pequeño delay para UX
+        this.generateBotResponse(message);
+      }
+
+      addMessage(text, sender) {
+        const welcomeMessage = this.chatMessages.querySelector('.welcome-message');
+        if (welcomeMessage) welcomeMessage.remove();
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'message-avatar';
+
+        if (sender === 'user') {
+          if (this.userAvatar.startsWith('data:')) {
+            const img = document.createElement('img');
+            img.src = this.userAvatar;
+            avatarDiv.appendChild(img);
+          } else {
+            avatarDiv.textContent = this.userAvatar;
+          }
+        } else {
+          avatarDiv.textContent = this.botAvatar;
+        }
+
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+        bubbleDiv.textContent = text;
+
+        messageContent.appendChild(avatarDiv);
+        messageContent.appendChild(bubbleDiv);
+
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-info';
+        timeDiv.textContent = this.getCurrentTime();
+
+        messageDiv.appendChild(messageContent);
+        messageDiv.appendChild(timeDiv);
+
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+      }
+
+      generateBotResponse(userMessage) {
+        setTimeout(() => {
+          const reply = this.eliza.transform(userMessage);
+          this.addMessage(reply, 'bot');
+
+          if (this.eliza.quit) {
+            const finalMsg = this.eliza.getFinal();
+            if (finalMsg) this.addMessage(finalMsg, 'bot');
+            this.sendButton.disabled = true;
+            this.messageInput.disabled = true;
+          }
+
+          this.hideTypingIndicator();
+        }, 500);
+      }
+
+      showTypingIndicator() {
+        this.typingIndicator.style.display = 'block';
+        this.scrollToBottom();
+        this.sendButton.disabled = true;
+      }
+
+      hideTypingIndicator() {
+        this.typingIndicator.style.display = 'none';
+        if (!this.eliza.quit) this.sendButton.disabled = false;
+        this.messageInput.focus();
+      }
+
+      getCurrentTime() {
+        const now = new Date();
+        return now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      scrollToBottom() { this.chatMessages.scrollTop = this.chatMessages.scrollHeight; }
+
+      loadSavedAvatar() {
+        const savedAvatar = this.userAvatar;
+        const preview = document.getElementById('userAvatarPreview');
+        if (savedAvatar.startsWith('data:')) {
+          const img = document.createElement('img');
+          img.src = savedAvatar;
+          preview.innerHTML = '';
+          preview.appendChild(img);
+        } else {
+          preview.textContent = savedAvatar;
+        }
+      }
+
+      saveUserAvatar() {
+        if (this.selectedAvatarType === 'image' && this.selectedAvatarData) {
+          this.userAvatar = this.selectedAvatarData;
+        } else {
+          this.userAvatar = this.selectedAvatar;
+        }
+        this.loadSavedAvatar();
+      }
+
+      resetEliza() {
+        this.eliza.reset();
+        this.chatMessages.innerHTML = '';
+        this.sendButton.disabled = false;
+        this.messageInput.disabled = false;
+        const initial = this.eliza.getInitial();
+        if (initial) this.addMessage(initial, 'bot');
+        this.messageInput.focus();
+      }
+    }
+
+    // Variable global
+    let chatBot;
+
+    // Modal avatar helpers
+    function openAvatarModal(){ document.getElementById('avatarModal').classList.add('active'); }
+    function closeAvatarModal(){ document.getElementById('avatarModal').classList.remove('active'); }
+
+    function handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const avatarOptions = document.getElementById('avatarOptions');
+        const prev = avatarOptions.querySelector('.custom-avatar');
+        if (prev) prev.remove();
+        const custom = document.createElement('div');
+        custom.className = 'avatar-option custom-avatar selected';
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        custom.appendChild(img);
+        document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+        avatarOptions.appendChild(custom);
+        chatBot.selectedAvatarType = 'image';
+        chatBot.selectedAvatarData = e.target.result;
+        chatBot.selectedAvatar = 'custom';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveAvatar(){ chatBot.saveUserAvatar(); closeAvatarModal(); }
+
+    document.addEventListener('DOMContentLoaded', () => { chatBot = new ChatBot(); });
+  </script>
 </body>
 </html>
