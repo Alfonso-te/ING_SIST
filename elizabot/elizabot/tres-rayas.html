@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Juego de Tres en Raya</title>
+    <link rel="stylesheet" href="tres-rayas.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tres en Raya</h1>
+        <div class="board" id="board">
+            <div class="cell" data-cell="0"></div>
+            <div class="cell" data-cell="1"></div>
+            <div class="cell" data-cell="2"></div>
+            <div class="cell" data-cell="3"></div>
+            <div class="cell" data-cell="4"></div>
+            <div class="cell" data-cell="5"></div>
+            <div class="cell" data-cell="6"></div>
+            <div class="cell" data-cell="7"></div>
+            <div class="cell" data-cell="8"></div>
+        </div>
+    </div>
+    <div class="end-game" id="endGameMessage">
+        <div class="text"></div>
+        <button onclick="startGame()">Reiniciar</button>
+    </div>
+    <script src="tres-rayas.js"></script>
+</body>
+</html>
