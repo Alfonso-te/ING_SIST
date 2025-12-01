@@ -1,0 +1,35 @@
+ALGORITMO Metodo_Minimos_Cuadrados
+    ENTRADAS:
+        Lista_X (valores de la variable independiente)
+        Lista_Y (valores de la variable dependiente)
+
+    INICIO
+        1. Contar número de datos (n) = Longitud de Lista_X
+
+        2. Inicializar acumuladores en 0:
+           Suma_X = 0
+           Suma_Y = 0
+           Suma_X_Cuadrado = 0
+           Suma_XY = 0
+
+        3. CICLO (Para cada índice i desde 0 hasta n-1):
+           a. Suma_X = Suma_X + Lista_X[i]
+           b. Suma_Y = Suma_Y + Lista_Y[i]
+           c. Suma_X_Cuadrado = Suma_X_Cuadrado + (Lista_X[i] * Lista_X[i])
+           d. Suma_XY = Suma_XY + (Lista_X[i] * Lista_Y[i])
+        FIN CICLO
+
+        4. Calcular Promedios:
+           Promedio_X = Suma_X / n
+           Promedio_Y = Suma_Y / n
+
+        5. Calcular Pendiente (b) usando fórmula:
+           numerador = (n * Suma_XY) - (Suma_X * Suma_Y)
+           denominador = (n * Suma_X_Cuadrado) - (Suma_X * Suma_X)
+           b = numerador / denominador
+
+        6. Calcular Intersección (a) usando fórmula:
+           a = Promedio_Y - (b * Promedio_X)
+
+        7. RETORNAR ecuación: "y = a + bx"
+    FIN
