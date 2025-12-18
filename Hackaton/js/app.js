@@ -123,14 +123,19 @@ function iniciarSistemaNotificaciones() {
 
             if (!esParaMi) return;
 
-            // Actualizar UI
+            // Actualizar UI (Toast y Burbujas)
             const tipoTabla = msg.cita_id ? 'citas' : 'reservas';
             const idRegistro = msg.cita_id || msg.reserva_id;
             const chatAbierto = (chatActual.tipo === tipoTabla && chatActual.id == idRegistro);
 
             if (!chatAbierto) {
-                // Mostrar Toast y actualizar burbuja si el chat NO está abierto
                 mostrarToast(titulo, msg.contenido);
+                
+                // Actualizar contadores globales de pestañas si es necesario
+                const esAdmin = usuarioActual.rol === 'admin';
+                actualizarContadoresTabs(esAdmin);
+
+                // Actualizar burbuja individual si la tarjeta ya existe en pantalla
                 const btnId = `btn-chat-${tipoTabla}-${idRegistro}`;
                 const btnElement = document.getElementById(btnId);
                 
@@ -205,13 +210,12 @@ function enviarCorreoCambioEstado(datos, nuevoEstado, tipoSolicitud, motivoRecha
         motivo_rechazo: mensajeExtra 
     };
 
-    // --- CORRECCIÓN AQUÍ ---
     emailjs.send(
         window.EMAIL_CONFIG.SERVICE_ID, 
         window.EMAIL_CONFIG.TEMPLATE_ID, 
         templateParams,
         window.EMAIL_CONFIG.PUBLIC_KEY
-    ) // <--- ESTE PARÉNTESIS CIERRA LA FUNCIÓN SEND
+    )
     .then(() => {
         mostrarToast("Notificación", "Correo enviado al alumno.");
     })
@@ -222,13 +226,16 @@ function enviarCorreoCambioEstado(datos, nuevoEstado, tipoSolicitud, motivoRecha
     });
 }
 
-// --- CARGAR DATOS (CRUD) ---
+// --- CARGAR DATOS (CRUD + CONTADORES) ---
 async function cargarDatos(esAdmin = false) {
     const filtro = esAdmin ? filtroAdminActual : filtroAlumnoActual;
     const contenedor = document.getElementById(esAdmin ? 'admin-lista-contenedor' : 'lista-contenedor');
     contenedor.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
 
-    // 1. Consultar Citas y Reservas
+    // 1. Actualizar contadores de las pestañas
+    actualizarContadoresTabs(esAdmin);
+
+    // 2. Consultar Citas y Reservas
     let queryCitas = window.clienteSupabase.from('citas').select('*');
     let queryReservas = window.clienteSupabase.from('reservas').select('*');
 
@@ -243,7 +250,7 @@ async function cargarDatos(esAdmin = false) {
     const [resC, resR] = await Promise.all([queryCitas, queryReservas]);
     const items = [...(resC.data || []), ...(resR.data || [])]; 
 
-    // 2. Consultar mensajes no leídos para las burbujas
+    // 3. Consultar mensajes no leídos (Para burbujas individuales)
     const rolRemitente = esAdmin ? 'estudiante' : 'admin';
     const { data: noLeidos } = await window.clienteSupabase
         .from('mensajes')
@@ -251,7 +258,6 @@ async function cargarDatos(esAdmin = false) {
         .eq('leido', false)
         .eq('sender_role', rolRemitente);
 
-    // Filtrar conteo solo para items visibles
     const idsCitasVisibles = new Set(resC.data?.map(i => i.id));
     const idsReservasVisibles = new Set(resR.data?.map(i => i.id));
     const conteo = {};
@@ -266,7 +272,7 @@ async function cargarDatos(esAdmin = false) {
         });
     }
 
-    // 3. Renderizar
+    // 4. Renderizar
     contenedor.innerHTML = '';
     if (items.length === 0) {
         contenedor.innerHTML = `<p class="text-center text-muted mt-3">No hay registros en <b>${filtro}</b>.</p>`;
@@ -289,7 +295,6 @@ async function cargarDatos(esAdmin = false) {
         const nombreChat = esAdmin ? item.alumno_nombre : 'Administración';
         const btnId = `btn-chat-${tabla}-${item.id}`;
         
-        // Pasamos el nombre con comillas simples escapadas si fuera necesario
         const btnChat = `
         <button id="${btnId}" class="btn btn-sm btn-outline-primary position-relative" onclick="abrirChat('${tabla}', '${item.id}', '${nombreChat}')">
             <i class="bi bi-chat-dots-fill"></i> Chat
@@ -327,6 +332,80 @@ async function cargarDatos(esAdmin = false) {
     });
 }
 
+// --- FUNCIÓN CONTADORES DE PESTAÑAS (TABS) ---
+async function actualizarContadoresTabs(esAdmin) {
+    const rolRemitente = esAdmin ? 'estudiante' : 'admin';
+    
+    // Traer TODOS los mensajes no leídos
+    const { data: mensajesNoLeidos } = await window.clienteSupabase
+        .from('mensajes')
+        .select('cita_id, reserva_id')
+        .eq('leido', false)
+        .eq('sender_role', rolRemitente);
+
+    if (!mensajesNoLeidos || mensajesNoLeidos.length === 0) {
+        limpiarBadgesTabs(esAdmin);
+        return;
+    }
+
+    const citaIds = [...new Set(mensajesNoLeidos.map(m => m.cita_id).filter(id => id))];
+    const reservaIds = [...new Set(mensajesNoLeidos.map(m => m.reserva_id).filter(id => id))];
+
+    let queryCitas = window.clienteSupabase.from('citas').select('id, estado');
+    let queryReservas = window.clienteSupabase.from('reservas').select('id, estado');
+
+    if (!esAdmin) {
+        if(citaIds.length > 0) queryCitas = queryCitas.in('id', citaIds).eq('alumno_matricula', usuarioActual.matricula);
+        if(reservaIds.length > 0) queryReservas = queryReservas.in('id', reservaIds).eq('alumno_matricula', usuarioActual.matricula);
+    } else {
+        if(citaIds.length > 0) queryCitas = queryCitas.in('id', citaIds);
+        if(reservaIds.length > 0) queryReservas = queryReservas.in('id', reservaIds);
+    }
+
+    const [resC, resR] = await Promise.all([
+        citaIds.length > 0 ? queryCitas : { data: [] },
+        reservaIds.length > 0 ? queryReservas : { data: [] }
+    ]);
+
+    const mapaEstados = {};
+    resC.data?.forEach(c => mapaEstados[`citas_${c.id}`] = c.estado);
+    resR.data?.forEach(r => mapaEstados[`reservas_${r.id}`] = r.estado);
+
+    const conteo = { 'Pendiente': 0, 'Aceptada': 0, 'Rechazada': 0 };
+
+    mensajesNoLeidos.forEach(msg => {
+        let clave = msg.cita_id ? `citas_${msg.cita_id}` : `reservas_${msg.reserva_id}`;
+        let estado = mapaEstados[clave];
+        if (estado && conteo.hasOwnProperty(estado)) {
+            conteo[estado]++;
+        }
+    });
+
+    const prefijo = esAdmin ? 'tab-admin' : 'tab-alumno';
+    actualizarBadge(`${prefijo}-pendiente`, conteo['Pendiente']);
+    actualizarBadge(`${prefijo}-aceptada`, conteo['Aceptada']);
+    actualizarBadge(`${prefijo}-rechazada`, conteo['Rechazada']);
+}
+
+function actualizarBadge(idBtn, cantidad) {
+    const btn = document.getElementById(idBtn);
+    if (!btn) return;
+    const badge = btn.querySelector('.badge');
+    if (cantidad > 0) {
+        badge.innerText = cantidad;
+        badge.classList.remove('d-none');
+    } else {
+        badge.classList.add('d-none');
+    }
+}
+
+function limpiarBadgesTabs(esAdmin) {
+    const prefijo = esAdmin ? 'tab-admin' : 'tab-alumno';
+    ['pendiente', 'aceptada', 'rechazada'].forEach(estado => {
+        actualizarBadge(`${prefijo}-${estado}`, 0);
+    });
+}
+
 // --- LÓGICA DEL CHAT ---
 async function abrirChat(tipo, id, nombrePersona) {
     chatActual = { tipo, id, nombre: nombrePersona };
@@ -351,10 +430,15 @@ async function abrirChat(tipo, id, nombrePersona) {
     const rolRemitente = usuarioActual.rol === 'admin' ? 'estudiante' : 'admin';
     const colId = tipo === 'citas' ? 'cita_id' : 'reserva_id';
     
+    // Actualizar lectura en DB y actualizar contadores visuales
     window.clienteSupabase.from('mensajes')
         .update({ leido: true })
         .eq(colId, id).eq('sender_role', rolRemitente).eq('leido', false)
-        .then(); // Ejecutar en segundo plano
+        .then(() => {
+             // Actualizar contadores de pestañas en segundo plano
+             const esAdmin = usuarioActual.rol === 'admin';
+             actualizarContadoresTabs(esAdmin);
+        });
 
     // Evento al cerrar modal
     modalEl.addEventListener('hidden.bs.modal', function recargar() {
@@ -408,7 +492,6 @@ function renderizarBurbuja(msg) {
         const segundosDif = (ahora - fechaMsg) / 1000;
 
         if (segundosDif < 60) {
-            // Escapamos comillas simples para evitar errores JS
             const contenidoSafe = msg.contenido.replace(/'/g, "\\'");
             menuOpciones += `<a href="#" class="text-white ms-2 small" title="Editar (1 min)" onclick="editarMensaje(${msg.id}, '${contenidoSafe}')"><i class="bi bi-pencil-fill"></i></a>`;
         }
@@ -451,7 +534,7 @@ async function enviarMensaje() {
         [colId]: chatActual.id,
         sender_role: rol,
         contenido: txt,
-        visible_admin: true,       // Restaurar visibilidad para ambos
+        visible_admin: true,
         visible_estudiante: true
     });
 
@@ -517,7 +600,6 @@ function suscribirseAChat() {
                     renderizarBurbuja(payload.new);
                     document.getElementById('chat-body').scrollTop = document.getElementById('chat-body').scrollHeight;
                     
-                    // Marcar leído automáticamente si es mensaje entrante
                     const soyAdmin = usuarioActual.rol === 'admin';
                     const esMio = (soyAdmin && payload.new.sender_role === 'admin') || (!soyAdmin && payload.new.sender_role === 'estudiante');
                     
@@ -679,19 +761,29 @@ async function cambiarEstado(tabla, id, nuevoEstado) {
 }
 
 // --- FILTROS Y OTROS ---
+// --- EN js/app.js ---
+
 function cambiarFiltroAdmin(estado, btn) {
     filtroAdminActual = estado;
-    document.querySelectorAll('.btn-tab-admin').forEach(b => b.classList.remove('active'));
+    // 1. Buscar el contenedor padre de este botón específico
+    const container = btn.closest('.nav-pills');
+    // 2. Quitar 'active' SOLO a los botones dentro de este contenedor
+    container.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+    // 3. Activar el botón clickeado
     btn.classList.add('active');
     cargarDatos(true);
 }
+
 function cambiarFiltroAlumno(estado, btn) {
     filtroAlumnoActual = estado;
-    document.querySelectorAll('.btn-tab-alumno').forEach(b => b.classList.remove('active'));
+    // 1. Buscar el contenedor padre de este botón específico
+    const container = btn.closest('.nav-pills');
+    // 2. Quitar 'active' SOLO a los botones dentro de este contenedor
+    container.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+    // 3. Activar el botón clickeado
     btn.classList.add('active');
     cargarDatos(false);
 }
-
 function abrirModalEdicion(t, i, f, h) {
     editData = { t, i };
     document.getElementById('edit-fecha').value = f;

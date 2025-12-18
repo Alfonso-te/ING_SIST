@@ -1,10 +1,207 @@
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    font-family: 'Poppins', sans-serif;
-    min-height: 100vh;
+
+
+/* 1. VARIABLES (Identidad UVM) */
+:root {
+    --brand-red: #E31C23;       /* Rojo UVM */
+    --brand-black: #000000;     /* Negro Puro */
+    --brand-gray: #f8f9fa;      /* Fondo suave */
+    --main-font: 'Poppins', sans-serif;
+    --transition-speed: 0.3s;
 }
-.main-container { min-height: 100vh; padding-top: 60px; padding-bottom: 20px; }
-.pantalla { width: 100%; max-width: 500px; border-radius: 15px; border: none; transition: opacity 0.3s ease; opacity: 0; }
-.pantalla.activa { opacity: 1; }
-.card { border-radius: 15px; }
-.badge-notificacion { transform: translate(-50%, -50%) !important; }
+
+/* 2. BASE */
+body {
+    font-family: var(--main-font) !important;
+    background-color: #f0f2f5;
+    background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: var(--brand-black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3. CORRECCIONES DE COLOR (TODO LO AZUL A ROJO) */
+
+/* Pestañas (Pills) Activas: Fondo Rojo */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    background-color: var(--brand-red) !important;
+    color: white !important;
+}
+/* Pestañas Inactivas: Texto Rojo al pasar el mouse */
+.nav-pills .nav-link {
+    color: var(--brand-black);
+}
+.nav-pills .nav-link:hover:not(.active) {
+    color: var(--brand-red);
+    background-color: rgba(227, 28, 35, 0.1);
+}
+
+/* Textos y Bordes que eran azules */
+.text-primary { color: var(--brand-red) !important; }
+.border-primary { border-color: var(--brand-red) !important; }
+
+/* Enlaces */
+a { color: var(--brand-red); text-decoration: none; }
+a:hover { color: #b9151b; }
+
+/* Títulos */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--brand-black) !important;
+    font-weight: 700;
+}
+
+/* 4. NAVBAR */
+.navbar {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    color: var(--brand-red) !important;
+    font-weight: 800;
+}
+
+/* 5. CONTENEDOR PRINCIPAL */
+.main-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 80px;
+    padding-bottom: 20px;
+}
+
+/* 6. TARJETAS */
+.pantalla {
+    width: 100%;
+    max-width: 500px;
+    background: white;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15) !important;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    display: none;
+}
+
+.pantalla.activa {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 7. BOTONES Y FORMULARIOS */
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #ced4da;
+    padding: 12px;
+    color: var(--brand-black);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-red);
+    box-shadow: 0 0 0 4px rgba(227, 28, 35, 0.1);
+}
+
+/* Botones Sólidos Rojos */
+.btn-primary {
+    background-color: var(--brand-red) !important;
+    border-color: var(--brand-red) !important;
+    color: white !important;
+    padding: 12px;
+    font-weight: 600;
+}
+.btn-primary:hover {
+    background-color: #c91118 !important;
+    transform: translateY(-2px);
+}
+
+/* Botones de Borde Rojo (Outline) */
+.btn-outline-primary {
+    color: var(--brand-red) !important;
+    border-color: var(--brand-red) !important;
+}
+.btn-outline-primary:hover {
+    background-color: var(--brand-red) !important;
+    color: white !important;
+}
+
+/* Botones Negros */
+.btn-dark {
+    background-color: var(--brand-black) !important;
+    border-color: var(--brand-black) !important;
+}
+.btn-outline-dark {
+    color: var(--brand-black) !important;
+    border-color: var(--brand-black) !important;
+}
+.btn-outline-dark:hover {
+    background-color: var(--brand-black) !important;
+    color: white !important;
+}
+
+.btn-menu-item {
+    transition: all 0.2s;
+    border-width: 1px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+.btn-menu-item:hover { transform: translateX(5px); }
+
+/* 8. CHAT */
+.chat-burbuja {
+    padding: 12px 16px;
+    border-radius: 18px;
+    max-width: 80%;
+    font-size: 0.9rem;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.chat-mio {
+    background: linear-gradient(135deg, var(--brand-red), #b9151b);
+    color: white;
+    border-bottom-right-radius: 4px;
+    margin-left: auto;
+}
+.chat-otro {
+    background-color: #f1f3f5;
+    color: var(--brand-black);
+    border-bottom-left-radius: 4px;
+    margin-right: auto;
+    border: 1px solid #e9ecef;
+}
+
+/* 9. UTILIDADES */
+#pantalla-admin { max-width: 800px; }
+.logo-img { height: 40px; width: auto; object-fit: contain; }
+.form-floating label { color: #6c757d; }
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: var(--brand-red);
+    opacity: 0.8;
+}
+
+/* ESTILOS PARA LA CARGA DE FOTO DE PERFIL */
+
+/* Por defecto, la capa superpuesta (overlay) está totalmente transparente */
+.upload-overlay {
+    opacity: 0;
+    transition: opacity 0.3s ease; /* Transición suave */
+}
+
+/* Cuando el mouse pasa sobre el contenedor, la capa se vuelve visible */
+.profile-upload-container:hover .upload-overlay {
+    opacity: 1;
+}
+
+/* Asegura que la imagen respete los bordes redondeados del contenedor */
+.profile-upload-container img {
+    border-radius: 50%;
+}

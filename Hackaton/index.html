@@ -2,239 +2,395 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión Escolar Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CitaLince | Gestión Escolar</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="assets/uvm-logo.png">
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-       (function(){
-          emailjs.init("YOUR_PUBLIC_KEY_HERE"); // <--- IMPORTANTE: Pega tu PUBLIC KEY aquí si no usas config.js
-       })();
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <style>
-        .chat-burbuja { padding: 10px 15px; border-radius: 15px; position: relative; max-width: 80%; word-wrap: break-word;}
-        .chat-mio { background-color: #0d6efd; color: white; border-bottom-right-radius: 2px; }
-        .chat-otro { background-color: #f1f1f1; color: black; border-bottom-left-radius: 2px; }
-        .chat-hora { font-size: 0.7rem; opacity: 0.8; margin-top: 4px; text-align: right; }
-        
-    </style>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <nav class="navbar navbar-dark bg-transparent fixed-top">
-        <div class="container-fluid">
-            <span class="navbar-brand fw-bold"><i class="bi bi-mortarboard-fill me-2"></i>CitaLince</span>
-            <button id="btn-avatar-nav" class="btn p-0 rounded-circle overflow-hidden border border-2 border-white d-none" style="width: 40px; height: 40px;" type="button" data-bs-toggle="offcanvas" data-bs-target="#panelUsuario">
-                <img id="avatar-navbar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-100 h-100 object-fit-cover">
+    <nav class="navbar fixed-top">
+        <div class="container"> 
+            <span class="navbar-brand d-flex align-items-center">
+                <img src="assets/uvm-logo.png" alt="Logo" class="d-inline-block align-text-top me-2 logo-img">
+                CitaLince
+            </span>
+            <button id="btn-avatar-nav" class="btn p-0 rounded-circle shadow-sm d-none" style="width: 42px; height: 42px; border: 2px solid white;" type="button" data-bs-toggle="offcanvas" data-bs-target="#panelUsuario">
+                <img id="avatar-navbar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-100 h-100 object-fit-cover rounded-circle">
             </button>
         </div>
     </nav>
 
-    <div class="container main-container d-flex flex-column align-items-center justify-content-center">
+    <div class="container main-container">
 
-        <section id="pantalla-registro" class="pantalla card shadow-lg p-4 active-screen">
+        <section id="pantalla-registro" class="pantalla p-4 p-md-5 active-screen">
             <div class="text-center mb-4">
-                <i class="bi bi-person-circle display-1 text-primary"></i>
-                <h2 class="mt-3 fw-bold" id="titulo-auth">Bienvenido</h2>
+                <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 shadow-sm">
+                    <i class="bi bi-person-badge text-primary display-4"></i>
+                </div>
+                <h2 class="fw-bold" id="titulo-auth">Bienvenido</h2>
+                <p class="text-muted small">Ingresa tus credenciales institucionales</p>
             </div>
+
             <form id="form-auth" onsubmit="manejarAuth(event)">
                 <div id="campos-registro">
-                    <input type="text" class="form-control mb-3" id="nombre" placeholder="Nombre Completo">
-                    <input type="text" class="form-control mb-3" id="matricula" placeholder="Matrícula">
-                    <select class="form-select mb-3" id="carrera">
-                        <option value="" selected disabled>Selecciona tu carrera</option>
-                        <option value="Sistemas">Ing. Sistemas Computacionales</option>
-                        <option value="Industrial">Ing. Industrial</option>
-                        <option value="Mecatronica">Ing. Mecatrónica</option>
-                        <option value="Civil">Ing. Civil</option>
-                        <option value="Gestion">Ing. Gestión Empresarial</option>
-                        <option value="Logistica">Ing. Logística</option>
-                    </select>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="nombre" placeholder="Nombre">
+                        <label for="nombre">Nombre Completo</label>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="matricula" placeholder="Matrícula">
+                                <label for="matricula">Matrícula</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="carrera">
+                                    <option value="" selected disabled>Elige</option>
+                                    <option value="Sistemas">Sistemas</option>
+                                    <option value="Industrial">Industrial</option>
+                                    <option value="Mecatronica">Mecatrónica</option>
+                                    <option value="Civil">Civil</option>
+                                    <option value="Gestion">Gestión</option>
+                                    <option value="Logistica">Logística</option>
+                                </select>
+                                <label for="carrera">Carrera</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <input type="email" class="form-control mb-3" id="email" placeholder="Email" required>
-                <input type="password" class="form-control mb-3" id="password" placeholder="Contraseña" required>
-                <button type="submit" class="btn btn-primary w-100 rounded-pill" id="btn-auth-action">Registrarse</button>
+
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+                    <label for="email">Correo Electrónico</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="password" placeholder="Password" required>
+                    <label for="password">Contraseña</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 rounded-pill btn-lg shadow-sm" id="btn-auth-action">
+                    Iniciar Sesión
+                </button>
             </form>
-            <div class="text-center mt-3">
-                <button class="btn btn-link" onclick="toggleAuthMode()">Cambiar a Login/Registro</button>
+
+            <div class="text-center mt-4">
+                <button class="btn btn-link text-decoration-none text-muted fw-bold" onclick="toggleAuthMode()" style="font-size: 0.9rem;">
+                    ¿No tienes cuenta? <span class="text-primary">Regístrate</span>
+                </button>
             </div>
         </section>
 
-        <section id="pantalla-menu" class="pantalla card shadow-lg p-4 d-none text-center">
-            <h2 class="fw-bold mb-1">Hola, <span id="nombre-alumno-display" class="text-primary"></span></h2>
-            <div class="d-grid gap-3 mt-4">
-                <button id="btn-menu-citas" onclick="mostrarPantalla('pantalla-citas')" class="btn btn-outline-primary p-3 text-start"><i class="bi bi-calendar-check me-2"></i> Agendar Cita</button>
-                <button id="btn-menu-reservas" onclick="mostrarPantalla('pantalla-reservas')" class="btn btn-outline-success p-3 text-start"><i class="bi bi-pc-display me-2"></i> Reservar Espacio</button>
-                <button onclick="verHistorial()" class="btn btn-dark p-3 text-start"><i class="bi bi-clock-history me-2"></i> Mis Registros</button>
-                <button onclick="cargarPanelAdmin()" id="btn-ir-admin" class="btn btn-danger p-3 text-start d-none"><i class="bi bi-shield-lock me-2"></i> Ir al Panel Admin</button>
+        <section id="pantalla-menu" class="pantalla p-4 d-none text-center">
+            <h5 class="text-muted text-uppercase small ls-1">Panel de Estudiante</h5>
+            <h2 class="fw-bold mb-4">Hola, <span id="nombre-alumno-display" class="text-primary">Alumno</span></h2>
+            
+            <div class="row g-3">
+                <div class="col-12">
+                    <button id="btn-menu-citas" onclick="mostrarPantalla('pantalla-citas')" class="btn btn-outline-primary btn-menu-item w-100 p-3">
+                        <i class="bi bi-calendar-check fs-2 me-3"></i>
+                        <div class="text-start">
+                            <div class="fw-bold">Agendar Cita</div>
+                            <small class="text-muted">Trámites y Asesorías</small>
+                        </div>
+                    </button>
+                </div>
+                <div class="col-12">
+                    <button id="btn-menu-reservas" onclick="mostrarPantalla('pantalla-reservas')" class="btn btn-outline-dark btn-menu-item w-100 p-3">
+                        <i class="bi bi-laptop fs-2 me-3"></i>
+                        <div class="text-start">
+                            <div class="fw-bold">Reservar Espacio</div>
+                            <small class="text-muted">Labs y Salas</small>
+                        </div>
+                    </button>
+                </div>
+                <div class="col-12">
+                    <button onclick="verHistorial()" class="btn btn-light btn-menu-item w-100 p-3 border">
+                        <i class="bi bi-clock-history fs-2 me-3 text-secondary"></i>
+                        <div class="text-start">
+                            <div class="fw-bold">Historial</div>
+                            <small class="text-muted">Consulta tus estados</small>
+                        </div>
+                    </button>
+                </div>
+                <div class="col-12">
+                    <button onclick="cargarPanelAdmin()" id="btn-ir-admin" class="btn btn-danger btn-menu-item w-100 p-3 d-none">
+                        <i class="bi bi-shield-lock fs-2 me-3"></i>
+                        <div class="text-start">
+                            <div class="fw-bold">Panel Admin</div>
+                            <small class="text-white-50">Acceso Restringido</small>
+                        </div>
+                    </button>
+                </div>
             </div>
         </section>
 
-        <section id="pantalla-citas" class="pantalla card shadow-lg p-4 d-none">
-            <div class="d-flex align-items-center mb-3">
-                <button class="btn btn-light rounded-circle me-3" onclick="mostrarPantalla('pantalla-menu')"><i class="bi bi-arrow-left"></i></button>
-                <h3 class="m-0 fw-bold">Nueva Cita</h3>
+        <section id="pantalla-citas" class="pantalla p-4 d-none">
+            <div class="d-flex align-items-center mb-4 border-bottom pb-3">
+                <button class="btn btn-light rounded-circle me-3 shadow-sm" onclick="mostrarPantalla('pantalla-menu')"><i class="bi bi-arrow-left"></i></button>
+                <h4 class="m-0 fw-bold">Nueva Cita</h4>
             </div>
+            
             <form id="form-citas" onsubmit="guardarCita(event)">
-                <div class="mb-3">
-                    <label class="fw-bold small">TIPO DE CITA</label>
+                <div class="form-floating mb-3">
                     <select id="tipo-cita" class="form-select" onchange="toggleCamposCita()">
                         <option value="Administrativa">Administrativa</option>
                         <option value="Asesoria">Asesoría Académica</option>
                     </select>
+                    <label>Tipo de Solicitud</label>
                 </div>
+
                 <div id="campos-admin" class="mb-3">
-                    <label class="fw-bold small">DEPARTAMENTO</label>
-                    <select id="detalle-admin" class="form-select">
-                        <option value="CAE">CAE</option>
-                        <option value="Becas">Becas</option>
-                        <option value="Cajas">Cajas</option>
-                    </select>
+                    <div class="form-floating">
+                        <select id="detalle-admin" class="form-select">
+                            <option value="CAE">CAE (Atención Estudiantes)</option>
+                            <option value="Becas">Becas y Apoyos</option>
+                            <option value="Cajas">Cajas y Pagos</option>
+                        </select>
+                        <label>Departamento</label>
+                    </div>
                 </div>
+
                 <div id="campos-asesoria" class="mb-3 d-none">
-                    <label class="fw-bold small">DATOS DE ASESORÍA</label>
-                    <input type="text" id="nombre-maestro" class="form-control mb-2" placeholder="Nombre del Maestro">
-                    <input type="text" id="lugar-asesoria" class="form-control" placeholder="Lugar / Salón">
+                    <div class="form-floating mb-2">
+                        <input type="text" id="nombre-maestro" class="form-control" placeholder="Maestro">
+                        <label>Nombre del Maestro</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="text" id="lugar-asesoria" class="form-control" placeholder="Lugar">
+                        <label>Lugar / Salón</label>
+                    </div>
                 </div>
-                <div class="row">
-                    <div class="col-6 mb-3"><label class="fw-bold small">FECHA</label><input type="date" id="fecha-cita" class="form-control" required onchange="cargarHorasDisponibles('cita')"></div>
-                    <div class="col-6 mb-3"><label class="fw-bold small">HORARIO</label><select id="horario-cita" class="form-select" required><option value="" disabled selected>Elige fecha primero</option></select></div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-7">
+                        <div class="form-floating">
+                            <input type="date" id="fecha-cita" class="form-control" required onchange="cargarHorasDisponibles('cita')">
+                            <label>Fecha</label>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-floating">
+                            <select id="horario-cita" class="form-select" required>
+                                <option value="" disabled selected>--:--</option>
+                            </select>
+                            <label>Hora</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label class="fw-bold small">MENSAJE / OBSERVACIONES</label>
-                    <textarea id="mensaje-cita" class="form-control" rows="2" placeholder="Escribe detalles..."></textarea>
-                    <div class="form-text text-danger small"><i class="bi bi-exclamation-circle"></i> No editable después.</div>
+
+                <div class="form-floating mb-4">
+                    <textarea id="mensaje-cita" class="form-control" style="height: 100px" placeholder="Detalles"></textarea>
+                    <label>Observaciones (Opcional)</label>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 rounded-pill">Confirmar Cita</button>
+
+                <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow">
+                    Confirmar Cita <i class="bi bi-check-lg ms-2"></i>
+                </button>
             </form>
         </section>
 
-        <section id="pantalla-reservas" class="pantalla card shadow-lg p-4 d-none">
-            <div class="d-flex align-items-center mb-3">
-                <button class="btn btn-light rounded-circle me-3" onclick="mostrarPantalla('pantalla-menu')"><i class="bi bi-arrow-left"></i></button>
-                <h3 class="m-0 fw-bold">Reservar</h3>
+        <section id="pantalla-reservas" class="pantalla p-4 d-none">
+            <div class="d-flex align-items-center mb-4 border-bottom pb-3">
+                <button class="btn btn-light rounded-circle me-3 shadow-sm" onclick="mostrarPantalla('pantalla-menu')"><i class="bi bi-arrow-left"></i></button>
+                <h4 class="m-0 fw-bold">Reservar Espacio</h4>
             </div>
+
             <form id="form-reservas" onsubmit="guardarReserva(event)">
-                <select id="lugar-reserva" class="form-select mb-3"><option>Laboratorio</option><option>Sala</option></select>
-                <input type="text" id="nombre-sala" class="form-control mb-3" placeholder="Nombre Sala">
-                <div class="row">
-                    <div class="col-6 mb-3"><label class="fw-bold small">FECHA</label><input type="date" id="fecha-reserva" class="form-control" required onchange="cargarHorasDisponibles('reserva')"></div>
-                    <div class="col-6 mb-3"><label class="fw-bold small">HORARIO</label><select id="horario-reserva" class="form-select" required><option value="" disabled selected>Elige fecha primero</option></select></div>
+                <div class="form-floating mb-3">
+                    <select id="lugar-reserva" class="form-select">
+                        <option value="Laboratorio">Laboratorio de Cómputo</option>
+                        <option value="Sala">Sala de Estudios</option>
+                        <option value="Audiovisual">Aula Audiovisual</option>
+                    </select>
+                    <label>Espacio</label>
                 </div>
-                <div class="mb-4">
-                    <label class="fw-bold small">MENSAJE / MOTIVO</label>
-                    <textarea id="mensaje-reserva" class="form-control" rows="2" placeholder="Motivo de la reserva..."></textarea>
-                    <div class="form-text text-danger small"><i class="bi bi-exclamation-circle"></i> No editable después.</div>
+                
+                <div class="form-floating mb-3">
+                    <input type="text" id="nombre-sala" class="form-control" placeholder="Sala">
+                    <label>Nombre Específico (Ej: Lab 3)</label>
                 </div>
-                <button type="submit" class="btn btn-success w-100 rounded-pill">Confirmar Reserva</button>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-7">
+                        <div class="form-floating">
+                            <input type="date" id="fecha-reserva" class="form-control" required onchange="cargarHorasDisponibles('reserva')">
+                            <label>Fecha</label>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-floating">
+                            <select id="horario-reserva" class="form-select" required>
+                                <option value="" disabled selected>--:--</option>
+                            </select>
+                            <label>Hora</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <textarea id="mensaje-reserva" class="form-control" style="height: 100px" placeholder="Motivo"></textarea>
+                    <label>Motivo de Uso</label>
+                </div>
+
+                <button type="submit" class="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow">
+                    Reservar Ahora <i class="bi bi-arrow-right ms-2"></i>
+                </button>
             </form>
         </section>
 
-        <section id="pantalla-historial" class="pantalla card shadow-lg p-4 d-none h-100">
-            <div class="d-flex align-items-center mb-3">
-                <button class="btn btn-light rounded-circle me-3" onclick="mostrarPantalla('pantalla-menu')"><i class="bi bi-arrow-left"></i></button>
-                <h3 class="m-0 fw-bold">Mis Registros</h3>
+        <section id="pantalla-historial" class="pantalla p-0 d-none h-100 overflow-hidden d-flex flex-column">
+            <div class="p-4 bg-white border-bottom shadow-sm z-1">
+                <div class="d-flex align-items-center mb-3">
+                    <button class="btn btn-light rounded-circle me-3 shadow-sm" onclick="mostrarPantalla('pantalla-menu')"><i class="bi bi-arrow-left"></i></button>
+                    <h4 class="m-0 fw-bold">Mis Solicitudes</h4>
+                </div>
+                <div class="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-pill">
+                    <button id="tab-alumno-pendiente" class="nav-link active rounded-pill small" onclick="cambiarFiltroAlumno('Pendiente', this)">
+                        Pendientes <span class="badge bg-danger rounded-pill d-none ms-1">0</span>
+                    </button>
+                    <button id="tab-alumno-aceptada" class="nav-link rounded-pill small" onclick="cambiarFiltroAlumno('Aceptada', this)">
+                        Aceptadas <span class="badge bg-danger rounded-pill d-none ms-1">0</span>
+                    </button>
+                    <button id="tab-alumno-rechazada" class="nav-link rounded-pill small" onclick="cambiarFiltroAlumno('Rechazada', this)">
+                        Rechazadas <span class="badge bg-danger rounded-pill d-none ms-1">0</span>
+                    </button>
+                </div>
             </div>
-            <ul class="nav nav-pills nav-fill mb-3 gap-2">
-                <li class="nav-item"><button class="nav-link active btn-tab-alumno" onclick="cambiarFiltroAlumno('Pendiente', this)">Pendientes</button></li>
-                <li class="nav-item"><button class="nav-link btn-tab-alumno" onclick="cambiarFiltroAlumno('Aceptada', this)">Aceptadas</button></li>
-                <li class="nav-item"><button class="nav-link btn-tab-alumno" onclick="cambiarFiltroAlumno('Rechazada', this)">Rechazadas</button></li>
-            </ul>
-            <div id="lista-contenedor" class="overflow-auto bg-light p-2 rounded border" style="max-height: 60vh;"></div>
+            
+            <div id="lista-contenedor" class="flex-grow-1 overflow-auto p-3 bg-light"></div>
         </section>
 
-        <section id="pantalla-admin" class="pantalla card shadow-lg p-4 d-none border-danger border-top border-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="m-0 fw-bold text-danger">Panel Admin</h3>
-                <button class="btn btn-sm btn-outline-secondary" onclick="mostrarPantalla('pantalla-menu')">Menú</button>
+        <section id="pantalla-admin" class="pantalla p-0 d-none h-100 overflow-hidden d-flex flex-column border-top border-5 border-danger">
+            <div class="p-4 bg-white border-bottom shadow-sm z-1">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="m-0 fw-bold text-danger">Administración</h4>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="mostrarPantalla('pantalla-menu')">Salir</button>
+                </div>
+                <div class="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-3">
+                    <button id="tab-admin-pendiente" class="nav-link active rounded-3 small" onclick="cambiarFiltroAdmin('Pendiente', this)">
+                        Pendientes <span class="badge bg-danger d-none ms-1">0</span>
+                    </button>
+                    <button id="tab-admin-aceptada" class="nav-link rounded-3 small" onclick="cambiarFiltroAdmin('Aceptada', this)">
+                        Aceptadas <span class="badge bg-danger d-none ms-1">0</span>
+                    </button>
+                    <button id="tab-admin-rechazada" class="nav-link rounded-3 small" onclick="cambiarFiltroAdmin('Rechazada', this)">
+                        Rechazadas <span class="badge bg-danger d-none ms-1">0</span>
+                    </button>
+                </div>
             </div>
-            <ul class="nav nav-pills nav-fill mb-3 gap-2">
-                <li class="nav-item"><button class="nav-link active btn-tab-admin" onclick="cambiarFiltroAdmin('Pendiente', this)">Pendientes</button></li>
-                <li class="nav-item"><button class="nav-link btn-tab-admin" onclick="cambiarFiltroAdmin('Aceptada', this)">Aceptadas</button></li>
-                <li class="nav-item"><button class="nav-link btn-tab-admin" onclick="cambiarFiltroAdmin('Rechazada', this)">Rechazadas</button></li>
-            </ul>
-            <div id="admin-lista-contenedor" class="overflow-auto bg-light p-2 rounded border" style="max-height: 60vh;"></div>
+
+            <div id="admin-lista-contenedor" class="flex-grow-1 overflow-auto p-3 bg-light"></div>
         </section>
+        
+        <div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container" style="z-index: 2000;"></div>
 
-        <div class="offcanvas offcanvas-start" tabindex="-1" id="panelUsuario">
-            <div class="offcanvas-header bg-light">
-                <h5 class="offcanvas-title fw-bold">Mi Perfil</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-            </div>
-            <div class="offcanvas-body">
-                <div class="text-center mb-4">
-                    <img id="side-avatar-img" src="" class="rounded-circle border border-3 border-light shadow-sm" style="width: 100px; height: 100px;">
-                </div>
-                <form onsubmit="actualizarPerfil(event)">
-                    <label class="small text-muted fw-bold">Nombre</label><input type="text" id="side-nombre" class="form-control mb-3">
-                    <label class="small text-muted fw-bold">Matrícula</label><input type="text" id="side-matricula" class="form-control mb-3">
-                    <label class="small text-muted fw-bold">Cambiar Foto</label><input type="file" id="side-foto-file" class="form-control mb-4" accept="image/*">
-                    <button type="submit" class="btn btn-primary w-100 mb-2">Guardar Cambios</button>
-                </form>
-                <hr>
-                <button onclick="cerrarSesion()" class="btn btn-outline-danger w-100">Cerrar Sesión</button>
-            </div>
+    </div> <div class="offcanvas offcanvas-start" tabindex="-1" id="panelUsuario">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold">Mi Perfil</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
-
-        <div class="modal fade" id="modalChat" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-chat-dots-fill"></i>
-                            <div>
-                                <h6 class="m-0 fw-bold" id="chat-titulo-nombre">Cargando...</h6>
-                                <small class="text-white-50" style="font-size: 0.75rem;" id="chat-subtitulo">En línea</small>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-light border-0" onclick="vaciarChat()" title="Borrar toda la conversación">
-                                <i class="bi bi-trash3-fill"></i>
-                            </button>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                    </div>
-                    <div class="modal-body bg-light" id="chat-body" style="height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px;">
-                        <div class="text-center text-muted mt-5">Cargando conversación...</div>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="input-group">
-                            <input type="text" id="chat-input" class="form-control" placeholder="Escribe un mensaje..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
-                            <button class="btn btn-primary" onclick="enviarMensaje()"><i class="bi bi-send-fill"></i></button>
-                        </div>
-                    </div>
+        <div class="offcanvas-body d-flex flex-column align-items-center">
+            <div class="mb-4 profile-upload-container rounded-circle shadow-sm position-relative overflow-hidden" 
+                 style="width: 120px; height: 120px; cursor: pointer;"
+                 onclick="document.getElementById('side-foto-file').click()">
+                
+                <img id="side-avatar-img" src="" class="w-100 h-100 object-fit-cover">
+                
+                <div class="upload-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
+                    <i class="bi bi-camera-fill text-white fs-3"></i>
                 </div>
             </div>
+            
+            <form onsubmit="actualizarPerfil(event)" class="w-100">
+                <div class="form-floating mb-3">
+                    <input type="text" id="side-nombre" class="form-control">
+                    <label>Nombre</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" id="side-matricula" class="form-control" disabled>
+                    <label>Matrícula (No editable)</label>
+                </div>
+                
+                <input type="file" id="side-foto-file" class="d-none" accept="image/*">
+                
+                <button type="submit" class="btn btn-primary w-100 rounded-pill mb-3">Guardar Cambios</button>
+            </form>
+            
+            <div class="mt-auto w-100">
+                <button onclick="cerrarSesion()" class="btn btn-outline-danger w-100 rounded-pill py-2">
+                    <i class="bi bi-box-arrow-left me-2"></i> Cerrar Sesión
+                </button>
+            </div>
         </div>
+    </div>
 
-        <div class="modal fade" id="modalEditar" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header"><h5 class="modal-title">Editar</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                    <div class="modal-body">
-                        <label>Nueva Fecha</label><input type="date" id="edit-fecha" class="form-control mb-2">
-                        <label>Nuevo Horario</label><input type="time" id="edit-horario" class="form-control">
+    <div class="modal fade" id="modalChat" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header bg-primary text-white border-0" style="border-radius: 20px 20px 0 0;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white bg-opacity-25 p-2 rounded-circle">
+                            <i class="bi bi-chat-text-fill fs-5"></i>
+                        </div>
+                        <div class="lh-1">
+                            <h6 class="m-0 fw-bold" id="chat-titulo-nombre">Chat</h6>
+                            <small class="text-white-50" style="font-size: 0.75rem;" id="chat-subtitulo">En línea</small>
+                        </div>
                     </div>
-                    <div class="modal-footer"><button type="button" class="btn btn-primary" onclick="guardarCambiosModal()">Guardar</button></div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-link text-white-50" onclick="vaciarChat()"><i class="bi bi-trash3"></i></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+                <div class="modal-body bg-light" id="chat-body" style="height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                    </div>
+                <div class="modal-footer border-0 bg-white">
+                    <div class="input-group bg-light rounded-pill p-1 border">
+                        <input type="text" id="chat-input" class="form-control border-0 bg-transparent shadow-none" placeholder="Escribe un mensaje..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
+                        <button class="btn btn-primary rounded-circle m-1 shadow-sm" style="width: 40px; height: 40px;" onclick="enviarMensaje()">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container" style="z-index: 1090;"></div>
-
+    <div class="modal fade" id="modalEditar" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">Reprogramar</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        <input type="date" id="edit-fecha" class="form-control">
+                        <label>Nueva Fecha</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="time" id="edit-horario" class="form-control">
+                        <label>Nuevo Horario</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" onclick="guardarCambiosModal()">Guardar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/auth.js"></script>
-</body>
+    <script src="js/config.js"></script> <script src="js/app.js"></script>    <script src="js/auth.js"></script>   </body>
 </html>

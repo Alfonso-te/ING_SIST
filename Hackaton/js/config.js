@@ -1,5 +1,4 @@
 
-// js/config.js
 
 // 1. CONFIGURACIÓN SUPABASE
 const SUPABASE_URL = 'https://ziooofzbcvkmyyrdgjqb.supabase.co'; 

@@ -1,4 +1,8 @@
-// js/auth.js
+/**
+ * ARCHIVO: js/auth.js
+ * DESCRIPCIÓN: Gestiono mi identidad en CitaLince. Manejo el acceso y la actualización 
+ * del perfil vinculando la tabla 'alumnos' y el storage (bucket 'avatars') de Supabase.
+ */
 
 let usuarioActual = null; 
 let esModoRegistro = true; 
@@ -8,8 +12,9 @@ window.clienteSupabase.auth.onAuthStateChange((event, session) => {
     const btnAvatar = document.getElementById('btn-avatar-nav');
 
     if (session) {
+        // Cargo metadatos y aseguro tener el ID para las consultas a la tabla 'alumnos'
         usuarioActual = session.user.user_metadata;
-        // Guardamos el email real de la sesión por si no está en metadata
+        usuarioActual.id = session.user.id;
         usuarioActual.email = session.user.email; 
         
         actualizarInterfazUsuario();
@@ -17,7 +22,6 @@ window.clienteSupabase.auth.onAuthStateChange((event, session) => {
         
         if(btnAvatar) btnAvatar.classList.remove('d-none');
 
-        // Lógica de botones según Rol
         const btnAdmin = document.getElementById('btn-ir-admin');
         const btnCitas = document.getElementById('btn-menu-citas');
         const btnReservas = document.getElementById('btn-menu-reservas');
@@ -32,9 +36,7 @@ window.clienteSupabase.auth.onAuthStateChange((event, session) => {
             if(btnReservas) btnReservas.classList.remove('d-none');
         }
 
-        // --- ACTIVAR EL "OÍDO" DE NOTIFICACIONES ---
         if (typeof window.iniciarSistemaNotificaciones === 'function') {
-            console.log("🔊 Sistema de notificaciones activado");
             window.iniciarSistemaNotificaciones();
         }
 
@@ -47,8 +49,10 @@ window.clienteSupabase.auth.onAuthStateChange((event, session) => {
 
 // --- UI HELPERS ---
 function actualizarInterfazUsuario() {
+    if(!usuarioActual) return;
+
     const display = document.getElementById('nombre-alumno-display');
-    if(display && usuarioActual) display.innerText = usuarioActual.nombre;
+    if(display) display.innerText = usuarioActual.nombre;
     
     const sideNombre = document.getElementById('side-nombre');
     const sideMatricula = document.getElementById('side-matricula');
@@ -58,13 +62,96 @@ function actualizarInterfazUsuario() {
     const avatarNavbar = document.getElementById('avatar-navbar');
     const avatarSidebar = document.getElementById('side-avatar-img'); 
     const fotoUrl = usuarioActual.foto || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-    const fotoConCache = fotoUrl + (usuarioActual.foto ? `?t=${Date.now()}` : '');
+    
+    // Agrego un timestamp para romper el caché del navegador al actualizar la foto
+    const urlFinal = fotoUrl.includes('supabase') ? `${fotoUrl}?t=${Date.now()}` : fotoUrl;
 
-    if(avatarNavbar) avatarNavbar.src = fotoConCache;
-    if(avatarSidebar) avatarSidebar.src = fotoConCache;
+    if(avatarNavbar) avatarNavbar.src = urlFinal;
+    if(avatarSidebar) avatarSidebar.src = urlFinal;
 }
 
-// --- LOGICA LOGIN/REGISTRO ---
+// --- ACTUALIZACIÓN DE MI PERFIL ---
+async function actualizarPerfil(e) {
+    e.preventDefault();
+    
+    // Obtengo los elementos de mi Sidebar
+    const nuevoNombre = document.getElementById('side-nombre').value.trim();
+    const inputArchivo = document.getElementById('side-foto-file');
+    const archivoFoto = inputArchivo.files[0]; // Capturo el archivo AQUÍ para evitar el error de referencia
+    const btnGuardar = e.target.querySelector('button[type="submit"]');
+    
+    if (window.VALIDATOR.contieneGroserias(nuevoNombre)) {
+        alert("Nombre no permitido por las normas institucionales.");
+        return;
+    }
+
+    btnGuardar.innerText = "Guardando..."; 
+    btnGuardar.disabled = true;
+
+    try {
+        let nuevaFotoUrl = usuarioActual.foto;
+
+        // 1. GESTIÓN DE FOTO EN EL BUCKET 'avatars'
+        if (archivoFoto) {
+            const check = window.VALIDATOR.validarImagen(archivoFoto);
+            if (!check.valido) throw new Error(check.error);
+
+            const extension = archivoFoto.name.split('.').pop();
+            const nombreArchivo = `${usuarioActual.id}_${Date.now()}.${extension}`;
+            
+            // Subo el archivo al Storage
+            const { error: errorSubida } = await window.clienteSupabase.storage
+                .from('avatars')
+                .upload(nombreArchivo, archivoFoto);
+                
+            if (errorSubida) throw errorSubida;
+            
+            // Obtengo la URL pública para guardarla en los metadatos
+            const { data: dataUrl } = window.clienteSupabase.storage
+                .from('avatars')
+                .getPublicUrl(nombreArchivo);
+                
+            nuevaFotoUrl = dataUrl.publicUrl;
+        }
+
+        // 2. ACTUALIZACIÓN EN MI TABLA 'alumnos' (Correcto según tus tablas)
+        const { error: errorTabla } = await window.clienteSupabase
+            .from('alumnos') 
+            .update({ 
+                nombre: nuevoNombre
+                // No guardamos la foto en la tabla, solo se maneja vía metadatos de Auth para persistencia de sesión
+            })
+            .eq('id', usuarioActual.id); 
+
+        if (errorTabla) throw new Error("Error en tabla alumnos: " + errorTabla.message);
+
+        // 3. ACTUALIZACIÓN DE METADATOS DE SESIÓN (Auth)
+        const { data: dataAuth, error: errorAuth } = await window.clienteSupabase.auth.updateUser({
+            data: { nombre: nuevoNombre, foto: nuevaFotoUrl }
+        });
+        
+        if (errorAuth) throw errorAuth;
+
+        alert("✅ He actualizado tu perfil correctamente.");
+        usuarioActual = dataAuth.user.user_metadata; 
+        usuarioActual.id = dataAuth.user.id; 
+        actualizarInterfazUsuario();
+        
+        // Cierro mi panel lateral automáticamente
+        const panelEl = document.getElementById('panelUsuario');
+        const instancia = bootstrap.Offcanvas.getInstance(panelEl);
+        if(instancia) instancia.hide();
+
+    } catch (error) {
+        console.error("Error en mi perfil:", error);
+        alert("No pude actualizar el perfil: " + error.message);
+    } finally {
+        btnGuardar.innerText = "Guardar Cambios"; 
+        btnGuardar.disabled = false;
+    }
+}
+
+// --- LÓGICA DE REGISTRO / LOGIN ---
 async function manejarAuth(e) {
     e.preventDefault();
     const email = document.getElementById('email').value;
@@ -78,88 +165,45 @@ async function manejarAuth(e) {
         if (esModoRegistro) {
             const nombre = document.getElementById('nombre').value;
             const matricula = document.getElementById('matricula').value;
-            // --- VALIDACIONES NUEVAS ---
-            if (!window.VALIDATOR.esEmailValido(email)) {
-                alert("Por favor, introduce un correo electrónico válido.");
-                btn.disabled = false; btn.innerText = txtOriginal; return;
-            }
-            if (window.VALIDATOR.contieneGroserias(nombre)) {
-                alert("El nombre contiene palabras no permitidas. Por favor, usa tu nombre real.");
-                btn.disabled = false; btn.innerText = txtOriginal; return;
-            }
             const carrera = document.getElementById('carrera').value;
 
-            const { error } = await window.clienteSupabase.auth.signUp({
+            // Registro en Supabase Auth
+            const { data: authData, error: authError } = await window.clienteSupabase.auth.signUp({
                 email, password,
                 options: { 
                     data: { nombre, matricula, carrera, rol: 'estudiante', foto: '' } 
                 }
             });
-            if (error) throw error;
-            alert("✅ Registro exitoso! Ya puedes iniciar sesión.");
+            if (authError) throw authError;
+
+            // Registro en mi tabla 'alumnos' para gestión de datos
+            const { error: dbError } = await window.clienteSupabase.from('alumnos').insert({
+                id: authData.user.id,
+                nombre,
+                matricula,
+                carrera,
+                email
+            });
+            if (dbError) throw dbError;
+
+            alert("✅ ¡Registro exitoso! Ya puedes iniciar sesión.");
+            toggleAuthMode();
         } else {
             const { error } = await window.clienteSupabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
         }
     } catch (error) {
         alert("Error: " + error.message);
+    } finally {
         btn.disabled = false; btn.innerText = txtOriginal;
     }
 }
 
-async function actualizarPerfil(e) {
-    e.preventDefault();
-    const nuevoNombre = document.getElementById('side-nombre').value;
-    const nuevaMatricula = document.getElementById('side-matricula').value;
-    // --- VALIDACIONES NUEVAS ---
-    if (window.VALIDATOR.contieneGroserias(nuevoNombre)) {
-        alert("Nombre no permitido.");
-        return;
-    }
-
-    if (archivoFoto) {
-        const check = window.VALIDATOR.validarImagen(archivoFoto);
-        if (!check.valido) {
-            alert(check.error); // "Imagen muy pesada" o "Formato incorrecto"
-            return;
-        }
-    }
-    const archivoFoto = document.getElementById('side-foto-file').files[0];
-    const btnGuardar = e.target.querySelector('button[type="submit"]');
-    
-    btnGuardar.innerText = "Guardando..."; btnGuardar.disabled = true;
-
-    try {
-        let nuevaFotoUrl = usuarioActual.foto;
-        if (archivoFoto) {
-            const nombreArchivo = `avatar_${Date.now()}_${archivoFoto.name}`;
-            const { error: errorSubida } = await window.clienteSupabase.storage.from('avatars').upload(nombreArchivo, archivoFoto);
-            if (errorSubida) throw new Error(errorSubida.message);
-            const { data: dataUrl } = window.clienteSupabase.storage.from('avatars').getPublicUrl(nombreArchivo);
-            nuevaFotoUrl = dataUrl.publicUrl;
-        }
-
-        const { data, error } = await window.clienteSupabase.auth.updateUser({
-            data: { nombre: nuevoNombre, matricula: nuevaMatricula, foto: nuevaFotoUrl }
-        });
-        if (error) throw error;
-
-        alert("Perfil actualizado correctamente.");
-        usuarioActual = data.user.user_metadata; 
-        actualizarInterfazUsuario();
-        const panelEl = document.getElementById('panelUsuario');
-        if(panelEl) bootstrap.Offcanvas.getInstance(panelEl).hide();
-
-    } catch (error) {
-        alert(error.message);
-    } finally {
-        btnGuardar.innerText = "Guardar Cambios"; btnGuardar.disabled = false;
-    }
-}
-
 async function cerrarSesion() {
-    await window.clienteSupabase.auth.signOut();
-    location.reload();
+    if(confirm("¿Seguro que deseas salir de CitaLince?")) {
+        await window.clienteSupabase.auth.signOut();
+        location.reload();
+    }
 }
 
 function toggleAuthMode() {
@@ -173,3 +217,9 @@ function toggleAuthMode() {
         camposReg.classList.add('d-none'); titulo.innerText = "Iniciar Sesión"; btn.innerText = "Ingresar";
     }
 }
+
+// Exporto mis funciones
+window.manejarAuth = manejarAuth;
+window.actualizarPerfil = actualizarPerfil;
+window.cerrarSesion = cerrarSesion;
+window.toggleAuthMode = toggleAuthMode;
