@@ -7,15 +7,25 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("YOUR_PUBLIC_KEY_HERE"); // <--- IMPORTANTE: Pega tu PUBLIC KEY aquí si no usas config.js
+       })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        /* Estilos para el Chat */
         .chat-burbuja { padding: 10px 15px; border-radius: 15px; position: relative; max-width: 80%; word-wrap: break-word;}
         .chat-mio { background-color: #0d6efd; color: white; border-bottom-right-radius: 2px; }
         .chat-otro { background-color: #f1f1f1; color: black; border-bottom-left-radius: 2px; }
         .chat-hora { font-size: 0.7rem; opacity: 0.8; margin-top: 4px; text-align: right; }
+        
     </style>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -95,16 +105,8 @@
                     <input type="text" id="lugar-asesoria" class="form-control" placeholder="Lugar / Salón">
                 </div>
                 <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="fw-bold small">FECHA</label>
-                        <input type="date" id="fecha-cita" class="form-control" required onchange="cargarHorasDisponibles('cita')">
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="fw-bold small">HORARIO</label>
-                        <select id="horario-cita" class="form-select" required>
-                            <option value="" disabled selected>Elige fecha primero</option>
-                        </select>
-                    </div>
+                    <div class="col-6 mb-3"><label class="fw-bold small">FECHA</label><input type="date" id="fecha-cita" class="form-control" required onchange="cargarHorasDisponibles('cita')"></div>
+                    <div class="col-6 mb-3"><label class="fw-bold small">HORARIO</label><select id="horario-cita" class="form-select" required><option value="" disabled selected>Elige fecha primero</option></select></div>
                 </div>
                 <div class="mb-4">
                     <label class="fw-bold small">MENSAJE / OBSERVACIONES</label>
@@ -124,16 +126,8 @@
                 <select id="lugar-reserva" class="form-select mb-3"><option>Laboratorio</option><option>Sala</option></select>
                 <input type="text" id="nombre-sala" class="form-control mb-3" placeholder="Nombre Sala">
                 <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="fw-bold small">FECHA</label>
-                        <input type="date" id="fecha-reserva" class="form-control" required onchange="cargarHorasDisponibles('reserva')">
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="fw-bold small">HORARIO</label>
-                        <select id="horario-reserva" class="form-select" required>
-                             <option value="" disabled selected>Elige fecha primero</option>
-                        </select>
-                    </div>
+                    <div class="col-6 mb-3"><label class="fw-bold small">FECHA</label><input type="date" id="fecha-reserva" class="form-control" required onchange="cargarHorasDisponibles('reserva')"></div>
+                    <div class="col-6 mb-3"><label class="fw-bold small">HORARIO</label><select id="horario-reserva" class="form-select" required><option value="" disabled selected>Elige fecha primero</option></select></div>
                 </div>
                 <div class="mb-4">
                     <label class="fw-bold small">MENSAJE / MOTIVO</label>
@@ -180,33 +174,13 @@
                     <img id="side-avatar-img" src="" class="rounded-circle border border-3 border-light shadow-sm" style="width: 100px; height: 100px;">
                 </div>
                 <form onsubmit="actualizarPerfil(event)">
-                    <label class="small text-muted fw-bold">Nombre</label>
-                    <input type="text" id="side-nombre" class="form-control mb-3">
-                    <label class="small text-muted fw-bold">Matrícula</label>
-                    <input type="text" id="side-matricula" class="form-control mb-3">
-                    <label class="small text-muted fw-bold">Cambiar Foto</label>
-                    <input type="file" id="side-foto-file" class="form-control mb-4" accept="image/*">
+                    <label class="small text-muted fw-bold">Nombre</label><input type="text" id="side-nombre" class="form-control mb-3">
+                    <label class="small text-muted fw-bold">Matrícula</label><input type="text" id="side-matricula" class="form-control mb-3">
+                    <label class="small text-muted fw-bold">Cambiar Foto</label><input type="file" id="side-foto-file" class="form-control mb-4" accept="image/*">
                     <button type="submit" class="btn btn-primary w-100 mb-2">Guardar Cambios</button>
                 </form>
                 <hr>
                 <button onclick="cerrarSesion()" class="btn btn-outline-danger w-100">Cerrar Sesión</button>
-            </div>
-        </div>
-
-        <div class="modal fade" id="modalEditar" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header"><h5 class="modal-title">Editar</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                    <div class="modal-body">
-                        <label>Nueva Fecha</label>
-                        <input type="date" id="edit-fecha" class="form-control mb-2">
-                        <label>Nuevo Horario</label>
-                        <input type="time" id="edit-horario" class="form-control">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="guardarCambiosModal()">Guardar</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -228,22 +202,33 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                     </div>
-
                     <div class="modal-body bg-light" id="chat-body" style="height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px;">
                         <div class="text-center text-muted mt-5">Cargando conversación...</div>
                     </div>
-
                     <div class="modal-footer">
                         <div class="input-group">
                             <input type="text" id="chat-input" class="form-control" placeholder="Escribe un mensaje..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
-                            <button class="btn btn-primary" onclick="enviarMensaje()">
-                                <i class="bi bi-send-fill"></i>
-                            </button>
+                            <button class="btn btn-primary" onclick="enviarMensaje()"><i class="bi bi-send-fill"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="modalEditar" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header"><h5 class="modal-title">Editar</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <label>Nueva Fecha</label><input type="date" id="edit-fecha" class="form-control mb-2">
+                        <label>Nuevo Horario</label><input type="time" id="edit-horario" class="form-control">
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-primary" onclick="guardarCambiosModal()">Guardar</button></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container" style="z-index: 1090;"></div>
 
     </div>
 
@@ -251,8 +236,5 @@
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
-        
-        <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container" style="z-index: 1090;">
-            </div>
 </body>
 </html>

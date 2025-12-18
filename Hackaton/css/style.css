@@ -1,0 +1,10 @@
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+}
+.main-container { min-height: 100vh; padding-top: 60px; padding-bottom: 20px; }
+.pantalla { width: 100%; max-width: 500px; border-radius: 15px; border: none; transition: opacity 0.3s ease; opacity: 0; }
+.pantalla.activa { opacity: 1; }
+.card { border-radius: 15px; }
+.badge-notificacion { transform: translate(-50%, -50%) !important; }
