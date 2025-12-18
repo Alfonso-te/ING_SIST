@@ -1,16 +1,23 @@
 // js/app.js
 
-// --- 1. EXPORTAR FUNCIONES AL CONTEXTO GLOBAL ---
+// CONFIGURACIÓN DE HORARIOS
+const HORARIO_INICIO = 8; // 8 AM
+const HORARIO_FIN = 16;   // 4 PM (16:00)
+
+// --- EXPORTAR FUNCIONES (Esto arregla el botón de "Mis Registros") ---
 window.cambiarEstado = cambiarEstado;
 window.abrirModalEdicion = abrirModalEdicion;
 window.guardarCita = guardarCita;
 window.guardarReserva = guardarReserva;
 window.cambiarFiltroAdmin = cambiarFiltroAdmin;
-window.cambiarFiltroAlumno = cambiarFiltroAlumno; // <--- NUEVA EXPORTACIÓN
+window.cambiarFiltroAlumno = cambiarFiltroAlumno;
+window.toggleCamposCita = toggleCamposCita;
+window.cargarHorasDisponibles = cargarHorasDisponibles;
+window.verHistorial = verHistorial; // <--- AQUÍ ESTABA EL ERROR DEL BOTÓN
 
-// Variables globales para filtros
+// Variables globales filtros
 let filtroAdminActual = 'Pendiente';
-let filtroAlumnoActual = 'Pendiente'; // <--- NUEVA VARIABLE
+let filtroAlumnoActual = 'Pendiente';
 
 // --- NAVEGACIÓN ---
 function mostrarPantalla(idPantalla) {
@@ -25,12 +32,10 @@ function mostrarPantalla(idPantalla) {
     }
 }
 
-// --- VISUAL: MOSTRAR CAMPOS ---
 function toggleCamposCita() {
     const tipo = document.getElementById('tipo-cita').value;
     const divAdmin = document.getElementById('campos-admin');
     const divAsesoria = document.getElementById('campos-asesoria');
-
     if (tipo === 'Administrativa') {
         divAdmin.classList.remove('d-none');
         divAsesoria.classList.add('d-none');
@@ -40,19 +45,79 @@ function toggleCamposCita() {
     }
 }
 
+// --- LÓGICA ANTI-DUPLICADOS (Horarios Dinámicos) ---
+async function cargarHorasDisponibles(tipo) {
+    const idFecha = tipo === 'cita' ? 'fecha-cita' : 'fecha-reserva';
+    const idSelect = tipo === 'cita' ? 'horario-cita' : 'horario-reserva';
+    
+    const fechaSeleccionada = document.getElementById(idFecha).value;
+    const selectHorario = document.getElementById(idSelect);
+    
+    selectHorario.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+
+    if (!fechaSeleccionada) return;
+
+    const diaSemana = new Date(fechaSeleccionada).getUTCDay(); 
+    if (diaSemana === 0 || diaSemana === 6) {
+        selectHorario.innerHTML = '<option value="" disabled selected>No hay servicio en fines de semana</option>';
+        return;
+    }
+
+    try {
+        const { data: citas } = await window.clienteSupabase
+            .from('citas')
+            .select('horario')
+            .eq('fecha', fechaSeleccionada)
+            .neq('estado', 'Rechazada');
+            
+        const { data: reservas } = await window.clienteSupabase
+            .from('reservas')
+            .select('horario')
+            .eq('fecha', fechaSeleccionada)
+            .neq('estado', 'Rechazada');
+
+        const horasOcupadas = new Set();
+        if(citas) citas.forEach(c => horasOcupadas.add(c.horario));
+        if(reservas) reservas.forEach(r => horasOcupadas.add(r.horario));
+
+        selectHorario.innerHTML = '<option value="" disabled selected>Selecciona un horario</option>';
+        let hayCupo = false;
+
+        for (let h = HORARIO_INICIO; h < HORARIO_FIN; h++) {
+            const horaStr = h.toString().padStart(2, '0') + ":00";
+            const horaFinStr = (h + 1).toString().padStart(2, '0') + ":00";
+            
+            if (!horasOcupadas.has(horaStr)) {
+                const option = document.createElement('option');
+                option.value = horaStr;
+                option.text = `${horaStr} - ${horaFinStr}`;
+                selectHorario.appendChild(option);
+                hayCupo = true;
+            }
+        }
+
+        if (!hayCupo) {
+            selectHorario.innerHTML = '<option value="" disabled selected>Día completo (Sin cupo)</option>';
+        }
+
+    } catch (error) {
+        console.error(error);
+        selectHorario.innerHTML = '<option value="" disabled selected>Error al cargar</option>';
+    }
+}
+
+
 // --- GUARDAR CITA ---
 async function guardarCita(e) {
     e.preventDefault();
-    
     const tipo = document.getElementById('tipo-cita').value;
     const fecha = document.getElementById('fecha-cita').value;
     const horario = document.getElementById('horario-cita').value;
     const mensaje = document.getElementById('mensaje-cita').value; 
     
-    let detalle_admin = null; 
-    let maestro = null; 
-    let lugar = null;
+    if(!horario) { alert("Selecciona un horario válido"); return; }
 
+    let detalle_admin = null, maestro = null, lugar = null;
     if (tipo === 'Administrativa') {
         detalle_admin = document.getElementById('detalle-admin').value;
     } else { 
@@ -61,23 +126,13 @@ async function guardarCita(e) {
     }
 
     const { error } = await window.clienteSupabase.from('citas').insert({
-        alumno_nombre: usuarioActual.nombre,
-        alumno_matricula: usuarioActual.matricula,
-        tipo: tipo, 
-        detalle_admin: detalle_admin, 
-        maestro: maestro, 
-        lugar: lugar, 
-        fecha: fecha, 
-        horario: horario, 
-        mensaje: mensaje, 
-        estado: 'Pendiente'
+        alumno_nombre: usuarioActual.nombre, alumno_matricula: usuarioActual.matricula,
+        tipo, detalle_admin, maestro, lugar, fecha, horario, mensaje, estado: 'Pendiente'
     });
 
-    if (error) {
-        console.error("Error SQL:", error);
-        alert("Error al guardar: " + error.message);
-    } else { 
-        alert('✅ Cita agendada correctamente.'); 
+    if (error) alert("Error: " + error.message);
+    else { 
+        alert('✅ Cita agendada.'); 
         e.target.reset(); 
         toggleCamposCita();
         mostrarPantalla('pantalla-menu'); 
@@ -87,253 +142,130 @@ async function guardarCita(e) {
 // --- GUARDAR RESERVA ---
 async function guardarReserva(e) {
     e.preventDefault();
-
     const lugar = document.getElementById('lugar-reserva').value;
     const sala = document.getElementById('nombre-sala').value;
     const fecha = document.getElementById('fecha-reserva').value;
     const horario = document.getElementById('horario-reserva').value;
     const mensaje = document.getElementById('mensaje-reserva').value;
 
+    if(!horario) { alert("Selecciona un horario válido"); return; }
+
     const { error } = await window.clienteSupabase.from('reservas').insert({
-        alumno_nombre: usuarioActual.nombre,
-        alumno_matricula: usuarioActual.matricula,
-        tipo_espacio: lugar, 
-        nombre_sala: sala, 
-        fecha: fecha, 
-        horario: horario, 
-        mensaje: mensaje, 
-        estado: 'Pendiente'
+        alumno_nombre: usuarioActual.nombre, alumno_matricula: usuarioActual.matricula,
+        tipo_espacio: lugar, nombre_sala: sala, fecha, horario, mensaje, estado: 'Pendiente'
     });
 
-    if (error) {
-        console.error("Error SQL:", error);
-        alert("Error al guardar reserva: " + error.message);
-    } else { 
-        alert('✅ Reserva creada correctamente.'); 
+    if (error) alert("Error: " + error.message);
+    else { 
+        alert('✅ Reserva creada.'); 
         e.target.reset(); 
         mostrarPantalla('pantalla-menu'); 
     }
 }
 
-// --- LÓGICA DE FILTROS ---
-function cambiarFiltroAdmin(nuevoEstado, botonPresionado) {
-    filtroAdminActual = nuevoEstado;
-    document.querySelectorAll('.btn-tab-admin').forEach(btn => btn.classList.remove('active'));
-    botonPresionado.classList.add('active');
+// --- GESTIÓN DE FILTROS (ADMIN Y ALUMNO) ---
+function cambiarFiltroAdmin(estado, btn) {
+    filtroAdminActual = estado;
+    document.querySelectorAll('.btn-tab-admin').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
     cargarDatos(true);
 }
-
-function cambiarFiltroAlumno(nuevoEstado, botonPresionado) {
-    filtroAlumnoActual = nuevoEstado;
-    document.querySelectorAll('.btn-tab-alumno').forEach(btn => btn.classList.remove('active'));
-    botonPresionado.classList.add('active');
+function cambiarFiltroAlumno(estado, btn) {
+    filtroAlumnoActual = estado;
+    document.querySelectorAll('.btn-tab-alumno').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
     cargarDatos(false);
 }
 
-// --- CARGAR DATOS (HISTORIAL Y ADMIN) ---
+// --- CARGAR LISTAS ---
 async function cargarDatos(esAdmin = false) {
-    // Determinamos qué filtro usar dependiendo de quién pide los datos
     const filtro = esAdmin ? filtroAdminActual : filtroAlumnoActual;
-    
-    console.log("Cargando datos. Admin:", esAdmin, "Filtro:", filtro);
-    
     const contenedor = document.getElementById(esAdmin ? 'admin-lista-contenedor' : 'lista-contenedor');
-    contenedor.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Cargando...</p></div>';
+    contenedor.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
 
     let queryCitas = window.clienteSupabase.from('citas').select('*');
     let queryReservas = window.clienteSupabase.from('reservas').select('*');
 
     if (!esAdmin) {
-        // ALUMNO: Filtra por matricula Y por el ESTADO seleccionado en sus pestañas
-        queryCitas = queryCitas.eq('alumno_matricula', usuarioActual.matricula).eq('estado', filtro).order('id', { ascending: false });
-        queryReservas = queryReservas.eq('alumno_matricula', usuarioActual.matricula).eq('estado', filtro).order('id', { ascending: false });
+        queryCitas = queryCitas.eq('alumno_matricula', usuarioActual.matricula).eq('estado', filtro).order('id', {ascending:false});
+        queryReservas = queryReservas.eq('alumno_matricula', usuarioActual.matricula).eq('estado', filtro).order('id', {ascending:false});
     } else {
-        // ADMIN: Filtra por el ESTADO seleccionado
-        queryCitas = queryCitas.eq('estado', filtro).order('id', { ascending: true });
-        queryReservas = queryReservas.eq('estado', filtro).order('id', { ascending: true });
+        queryCitas = queryCitas.eq('estado', filtro).order('id', {ascending:true});
+        queryReservas = queryReservas.eq('estado', filtro).order('id', {ascending:true});
     }
 
-    const [resCitas, resReservas] = await Promise.all([queryCitas, queryReservas]);
-    const citas = resCitas.data || [];
-    const reservas = resReservas.data || [];
+    const [resC, resR] = await Promise.all([queryCitas, queryReservas]);
+    const items = [...(resC.data || []), ...(resR.data || [])]; 
 
     contenedor.innerHTML = '';
-    
-    if (citas.length === 0 && reservas.length === 0) {
-        const mensajeVacio = `No hay solicitudes en estado <b>"${filtro}"</b>.`; 
-        contenedor.innerHTML = `<div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1"></i><p>${mensajeVacio}</p></div>`;
+    if (items.length === 0) {
+        contenedor.innerHTML = `<p class="text-center text-muted mt-3">No hay registros en <b>${filtro}</b>.</p>`;
         return;
     }
 
-    // --- RENDERIZAR CITAS ---
-    citas.forEach(c => {
-        let detalle = c.tipo === 'Administrativa' ? `Depto: ${c.detalle_admin}` : `Con: ${c.maestro}`;
-        let msgDisplay = c.mensaje ? `<div class="alert alert-light border mt-2 mb-1 p-2 small text-truncate"><i class="bi bi-chat-left-text me-1"></i> ${c.mensaje}</div>` : '';
-
-        // BOTONES
-        let acciones = '';
-        if(esAdmin) {
-            // ADMIN
-            if (filtro === 'Pendiente') {
-                acciones = `
-                <div class="mt-2 d-flex gap-2">
-                    <button class="btn btn-sm btn-success flex-grow-1" onclick="window.cambiarEstado('citas', '${c.id}', 'Aceptada')">Aceptar</button>
-                    <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="window.cambiarEstado('citas', '${c.id}', 'Rechazada')">Rechazar</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="window.abrirModalEdicion('citas', '${c.id}', '${c.fecha}', '${c.horario}')"><i class="bi bi-pencil"></i></button>
-                </div>`;
-            } else {
-                 acciones = `<div class="mt-2 text-end"><small class="text-muted fst-italic">Archivada</small></div>`;
-            }
-        } else {
-            // ALUMNO: Solo mostrar botón de editar si es PENDIENTE
-            if(c.estado === 'Pendiente') {
-                 acciones = `<button class="btn btn-sm btn-link text-muted w-100" onclick="window.abrirModalEdicion('citas', '${c.id}', '${c.fecha}', '${c.horario}')">Editar fecha/hora</button>`;
-            } else {
-                 acciones = `<div class="mt-2 text-end"><small class="text-muted fst-italic">Finalizada</small></div>`;
-            }
+    items.forEach(item => {
+        const esCita = item.hasOwnProperty('tipo');
+        const titulo = esCita ? `Cita: ${item.tipo}` : `Reserva: ${item.tipo_espacio}`;
+        const tabla = esCita ? 'citas' : 'reservas';
+        const color = esCita ? 'primary' : 'success';
+        
+        let botones = '';
+        if (esAdmin && filtro === 'Pendiente') {
+            botones = `<div class="mt-2 d-flex gap-2">
+                <button class="btn btn-sm btn-success flex-grow-1" onclick="window.cambiarEstado('${tabla}', '${item.id}', 'Aceptada')">Aceptar</button>
+                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="window.cambiarEstado('${tabla}', '${item.id}', 'Rechazada')">Rechazar</button>
+            </div>`;
+        } else if (!esAdmin && filtro === 'Pendiente') {
+            botones = `<button class="btn btn-sm btn-link text-muted w-100" onclick="window.abrirModalEdicion('${tabla}', '${item.id}', '${item.fecha}', '${item.horario}')">Editar fecha/hora</button>`;
         }
 
         contenedor.innerHTML += `
-            <div class="card mb-3 shadow-sm border-start border-4 ${obtenerBorde(c.estado)}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <h6 class="text-primary fw-bold">Cita: ${c.tipo}</h6>
-                        <span class="badge ${obtenerColorBadge(c.estado)}">${c.estado}</span>
-                    </div>
-                    <p class="mb-1 fw-bold">${detalle}</p>
-                    <p class="small text-muted mb-1">📅 ${c.fecha} | ⏰ ${c.horario || '--:--'}</p>
-                    ${msgDisplay}
-                    <p class="small text-muted mb-0 mt-1">Alumno: ${c.alumno_nombre}</p>
-                    ${acciones}
+        <div class="card mb-2 border-start border-4 border-${color} shadow-sm">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between">
+                    <strong class="text-${color}">${titulo}</strong>
+                    <span class="badge bg-secondary">${item.estado}</span>
                 </div>
-            </div>`;
-    });
-
-    // --- RENDERIZAR RESERVAS ---
-    reservas.forEach(r => {
-        let msgDisplay = r.mensaje ? `<div class="alert alert-light border mt-2 mb-1 p-2 small text-truncate"><i class="bi bi-chat-left-text me-1"></i> ${r.mensaje}</div>` : '';
-
-        let acciones = '';
-        if(esAdmin) {
-            // ADMIN
-            if (filtro === 'Pendiente') {
-                acciones = `
-                <div class="mt-2 d-flex gap-2">
-                    <button class="btn btn-sm btn-success flex-grow-1" onclick="window.cambiarEstado('reservas', '${r.id}', 'Aceptada')">Aceptar</button>
-                    <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="window.cambiarEstado('reservas', '${r.id}', 'Rechazada')">Rechazar</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="window.abrirModalEdicion('reservas', '${r.id}', '${r.fecha}', '${r.horario}')"><i class="bi bi-pencil"></i></button>
-                </div>`;
-            } else {
-                acciones = `<div class="mt-2 text-end"><small class="text-muted fst-italic">Archivada</small></div>`;
-            }
-        } else {
-            // ALUMNO: Solo editar si es PENDIENTE
-            if(r.estado === 'Pendiente') {
-                acciones = `<button class="btn btn-sm btn-link text-muted w-100" onclick="window.abrirModalEdicion('reservas', '${r.id}', '${r.fecha}', '${r.horario}')">Editar fecha/hora</button>`;
-            } else {
-                acciones = `<div class="mt-2 text-end"><small class="text-muted fst-italic">Finalizada</small></div>`;
-            }
-        }
-
-        contenedor.innerHTML += `
-            <div class="card mb-3 shadow-sm border-start border-4 ${obtenerBorde(r.estado)}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <h6 class="text-success fw-bold">Reserva: ${r.tipo_espacio}</h6>
-                        <span class="badge ${obtenerColorBadge(r.estado)}">${r.estado}</span>
-                    </div>
-                    <p class="mb-1 fw-bold">${r.nombre_sala}</p>
-                    <p class="small text-muted mb-1">📅 ${r.fecha} | ⏰ ${r.horario}</p>
-                    ${msgDisplay}
-                    <p class="small text-muted mb-0 mt-1">Alumno: ${r.alumno_nombre}</p>
-                    ${acciones}
-                </div>
-            </div>`;
+                <p class="small mb-1">📅 ${item.fecha} | ⏰ ${item.horario} | ${item.alumno_nombre}</p>
+                ${item.mensaje ? `<div class="alert alert-light p-1 small mb-1 border">${item.mensaje}</div>` : ''}
+                ${botones}
+            </div>
+        </div>`;
     });
 }
 
-// --- ACTUALIZAR ESTADO ---
 async function cambiarEstado(tabla, id, nuevoEstado) {
-    const accion = nuevoEstado === 'Aceptada' ? 'ACEPTAR' : 'RECHAZAR';
-    if (!confirm(`¿Estás seguro de ${accion} esta solicitud?`)) return;
-
-    const { error } = await window.clienteSupabase
-        .from(tabla)
-        .update({ estado: nuevoEstado })
-        .eq('id', id);
-
-    if(error) {
-        console.error("Error update:", error);
-        alert("Error al actualizar: " + error.message);
-    } else {
-        cargarDatos(true); 
-    }
+    if(!confirm(`¿Confirmar ${nuevoEstado}?`)) return;
+    await window.clienteSupabase.from(tabla).update({ estado: nuevoEstado }).eq('id', id);
+    cargarDatos(true);
 }
 
-// --- EDICIÓN ---
-let editData = {}; 
-
+// Edición
+let editData = {};
 function abrirModalEdicion(tabla, id, fecha, horario) {
     editData = { tabla, id };
     document.getElementById('edit-fecha').value = fecha;
-    document.getElementById('edit-horario').value = horario !== 'undefined' ? horario : '';
-    const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
-    modal.show();
+    document.getElementById('edit-horario').value = horario;
+    new bootstrap.Modal(document.getElementById('modalEditar')).show();
 }
 
 async function guardarCambiosModal() {
     const nuevaFecha = document.getElementById('edit-fecha').value;
     const nuevoHorario = document.getElementById('edit-horario').value;
-
-    const { error } = await window.clienteSupabase
-        .from(editData.tabla)
-        .update({ fecha: nuevaFecha, horario: nuevoHorario })
-        .eq('id', editData.id);
-
-    if(error) alert("Error: " + error.message);
-    else {
-        alert("Actualizado correctamente");
-        const esAdmin = usuarioActual.rol === 'admin';
-        // Recargar usando el filtro actual correcto
-        cargarDatos(esAdmin);
-        const modalEl = document.getElementById('modalEditar');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        modal.hide();
-    }
+    await window.clienteSupabase.from(editData.tabla).update({ fecha: nuevaFecha, horario: nuevoHorario }).eq('id', editData.id);
+    alert("Actualizado");
+    location.reload(); 
 }
 
-// Helpers
-function obtenerColorBadge(estado) {
-    if(estado === 'Aceptada') return 'bg-success';
-    if(estado === 'Rechazada') return 'bg-danger';
-    return 'bg-warning text-dark';
-}
-function obtenerBorde(estado) {
-    if(estado === 'Aceptada') return 'border-success';
-    if(estado === 'Rechazada') return 'border-danger';
-    return 'border-primary'; 
-}
-function cargarPanelAdmin() {
-    // Al entrar, reseteamos a Pendientes
-    filtroAdminActual = 'Pendiente';
-    
-    // Reset visual de tabs admin
-    document.querySelectorAll('.btn-tab-admin').forEach(btn => btn.classList.remove('active'));
-    // Seleccionar el primero si existe
-    const tabs = document.querySelectorAll('.btn-tab-admin');
-    if(tabs.length > 0) tabs[0].classList.add('active');
-    
-    cargarDatos(true);
-}
+// --- FUNCIÓN RECUPERADA ---
 function verHistorial() {
-    // Al entrar, reseteamos a Pendientes
     filtroAlumnoActual = 'Pendiente';
-
-    // Reset visual de tabs alumno
+    mostrarPantalla('pantalla-historial');
+    
+    // Reset visual tabs
     document.querySelectorAll('.btn-tab-alumno').forEach(btn => btn.classList.remove('active'));
     const tabs = document.querySelectorAll('.btn-tab-alumno');
     if(tabs.length > 0) tabs[0].classList.add('active');
 
     cargarDatos(false);
-    mostrarPantalla('pantalla-historial');
 }
