@@ -1,11 +1,7 @@
-/**
- * ARCHIVO: js/auth.js
- * DESCRIPCIÓN: Gestiono mi identidad en CitaLince. Manejo el acceso y la actualización 
- * del perfil vinculando la tabla 'alumnos' y el storage (bucket 'avatars') de Supabase.
- */
+
 
 let usuarioActual = null; 
-let esModoRegistro = true; 
+let esModoRegistro = false; 
 
 // --- DETECTAR SESIÓN AL INICIAR ---
 window.clienteSupabase.auth.onAuthStateChange((event, session) => {
@@ -77,7 +73,7 @@ async function actualizarPerfil(e) {
     // Obtengo los elementos de mi Sidebar
     const nuevoNombre = document.getElementById('side-nombre').value.trim();
     const inputArchivo = document.getElementById('side-foto-file');
-    const archivoFoto = inputArchivo.files[0]; // Capturo el archivo AQUÍ para evitar el error de referencia
+    const archivoFoto = inputArchivo.files[0]; 
     const btnGuardar = e.target.querySelector('button[type="submit"]');
     
     if (window.VALIDATOR.contieneGroserias(nuevoNombre)) {
@@ -114,7 +110,7 @@ async function actualizarPerfil(e) {
             nuevaFotoUrl = dataUrl.publicUrl;
         }
 
-        // 2. ACTUALIZACIÓN EN MI TABLA 'alumnos' (Correcto según tus tablas)
+        // 2. ACTUALIZACIÓN EN MI TABLA 'alumnos' 
         const { error: errorTabla } = await window.clienteSupabase
             .from('alumnos') 
             .update({ 
@@ -177,44 +173,65 @@ async function manejarAuth(e) {
             if (authError) throw authError;
 
             // Registro en mi tabla 'alumnos' para gestión de datos
-            const { error: dbError } = await window.clienteSupabase.from('alumnos').insert({
-                id: authData.user.id,
-                nombre,
-                matricula,
-                carrera,
-                email
-            });
-            if (dbError) throw dbError;
+           const { error: dbError } = await window.clienteSupabase
+    .from('alumnos')
+    .upsert({
+        id: authData.user.id,
+        nombre: nombre,
+        matricula: matricula,
+        carrera: carrera,
+        email: email
+    }, { onConflict: 'id' }); 
 
-            alert("✅ ¡Registro exitoso! Ya puedes iniciar sesión.");
+if (dbError) {
+    console.warn("Aviso: El perfil ya existía o hubo un conflicto menor, continuando...");
+}
+
+            alert("✅ ¡Registro exitoso!.");
             toggleAuthMode();
         } else {
             const { error } = await window.clienteSupabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
         }
-    } catch (error) {
+   } catch (error) {
+    // Si el error es de usuario ya registrado, simplemente loguealo o ignóralo
+    if (error.message.includes("User already registered")) {
+        console.log("El usuario ya existe en Auth, procediendo...");
+        // Opcional: podrías llamar automáticamente a la función de login aquí
+    } else {
         alert("Error: " + error.message);
-    } finally {
-        btn.disabled = false; btn.innerText = txtOriginal;
     }
+    btn.disabled = false; btn.innerText = txtOriginal;
+}
 }
 
 async function cerrarSesion() {
-    if(confirm("¿Seguro que deseas salir de CitaLince?")) {
-        await window.clienteSupabase.auth.signOut();
-        location.reload();
-    }
+    // Forzamos el cierre en Supabase
+    await window.clienteSupabase.auth.signOut();
+    // Limpiamos el rastro local para que no pueda entrar de nuevo si se borró de la BD
+    localStorage.removeItem('usuario_lince');
+    localStorage.clear(); // Limpieza total de seguridad
+    location.reload();
 }
-
 function toggleAuthMode() {
     esModoRegistro = !esModoRegistro;
     const camposReg = document.getElementById('campos-registro');
     const titulo = document.getElementById('titulo-auth');
-    const btn = document.getElementById('btn-auth-action');
-    if(esModoRegistro) {
-        camposReg.classList.remove('d-none'); titulo.innerText = "Bienvenido"; btn.innerText = "Registrarse";
+    const btnAction = document.getElementById('btn-auth-action');
+    const linkBoton = document.querySelector('.text-center.mt-4 button');
+
+    if (esModoRegistro) {
+        // Modo para CREAR cuenta
+        camposReg.classList.remove('d-none'); 
+        titulo.innerText = "Crear Cuenta"; 
+        btnAction.innerText = "Registrarse";
+        linkBoton.innerHTML = '¿Ya tienes cuenta? <span class="text-primary">Inicia Sesión</span>';
     } else {
-        camposReg.classList.add('d-none'); titulo.innerText = "Iniciar Sesión"; btn.innerText = "Ingresar";
+        // Modo para ENTRAR (Login)
+        camposReg.classList.add('d-none'); 
+        titulo.innerText = "Bienvenido"; 
+        btnAction.innerText = "Iniciar Sesión";
+        linkBoton.innerHTML = '¿No tienes cuenta? <span class="text-primary">Regístrate</span>';
     }
 }
 

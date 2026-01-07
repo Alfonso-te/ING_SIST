@@ -1,4 +1,4 @@
-// js/app.js
+
 
 // --- CONFIGURACIÓN ---
 const HORARIO_INICIO = 8;
@@ -761,7 +761,6 @@ async function cambiarEstado(tabla, id, nuevoEstado) {
 }
 
 // --- FILTROS Y OTROS ---
-// --- EN js/app.js ---
 
 function cambiarFiltroAdmin(estado, btn) {
     filtroAdminActual = estado;

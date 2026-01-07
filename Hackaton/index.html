@@ -30,66 +30,65 @@
 
     <div class="container main-container">
 
-        <section id="pantalla-registro" class="pantalla p-4 p-md-5 active-screen">
-            <div class="text-center mb-4">
-                <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 shadow-sm">
-                    <i class="bi bi-person-badge text-primary display-4"></i>
-                </div>
-                <h2 class="fw-bold" id="titulo-auth">Bienvenido</h2>
-                <p class="text-muted small">Ingresa tus credenciales institucionales</p>
-            </div>
+       <section id="pantalla-registro" class="pantalla p-4 p-md-5 active-screen">
+    <div class="text-center mb-4">
+        <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 shadow-sm">
+            <i class="bi bi-person-badge text-primary display-4"></i>
+        </div>
+        <h2 class="fw-bold" id="titulo-auth">Bienvenido</h2>
+        <p class="text-muted small">Ingresa tus credenciales institucionales</p>
+    </div>
 
-            <form id="form-auth" onsubmit="manejarAuth(event)">
-                <div id="campos-registro">
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="nombre" placeholder="Nombre">
-                        <label for="nombre">Nombre Completo</label>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="matricula" placeholder="Matrícula">
-                                <label for="matricula">Matrícula</label>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="form-floating">
-                                <select class="form-select" id="carrera">
-                                    <option value="" selected disabled>Elige</option>
-                                    <option value="Sistemas">Sistemas</option>
-                                    <option value="Industrial">Industrial</option>
-                                    <option value="Mecatronica">Mecatrónica</option>
-                                    <option value="Civil">Civil</option>
-                                    <option value="Gestion">Gestión</option>
-                                    <option value="Logistica">Logística</option>
-                                </select>
-                                <label for="carrera">Carrera</label>
-                            </div>
-                        </div>
+    <form id="form-auth" onsubmit="manejarAuth(event)">
+        <div id="campos-registro" class="d-none">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="nombre" placeholder="Nombre">
+                <label for="nombre">Nombre Completo</label>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="matricula" placeholder="Matrícula">
+                        <label for="matricula">Matrícula</label>
                     </div>
                 </div>
-
-                <div class="form-floating mb-3">
-                    <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
-                    <label for="email">Correo Electrónico</label>
+                <div class="col-6">
+                    <div class="form-floating">
+                        <select class="form-select" id="carrera">
+                            <option value="" selected disabled>Elige</option>
+                            <option value="Sistemas">Sistemas</option>
+                            <option value="Industrial">Industrial</option>
+                            <option value="Mecatronica">Mecatrónica</option>
+                            <option value="Civil">Civil</option>
+                            <option value="Gestion">Gestión</option>
+                            <option value="Logistica">Logística</option>
+                        </select>
+                        <label for="carrera">Carrera</label>
+                    </div>
                 </div>
-                <div class="form-floating mb-4">
-                    <input type="password" class="form-control" id="password" placeholder="Password" required>
-                    <label for="password">Contraseña</label>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 rounded-pill btn-lg shadow-sm" id="btn-auth-action">
-                    Iniciar Sesión
-                </button>
-            </form>
-
-            <div class="text-center mt-4">
-                <button class="btn btn-link text-decoration-none text-muted fw-bold" onclick="toggleAuthMode()" style="font-size: 0.9rem;">
-                    ¿No tienes cuenta? <span class="text-primary">Regístrate</span>
-                </button>
             </div>
-        </section>
+        </div>
 
+        <div class="form-floating mb-3">
+            <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+            <label for="email">Correo Electrónico</label>
+        </div>
+        <div class="form-floating mb-4">
+            <input type="password" class="form-control" id="password" placeholder="Password" required>
+            <label for="password">Contraseña</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 rounded-pill btn-lg shadow-sm" id="btn-auth-action">
+            Iniciar Sesión
+        </button>
+    </form>
+
+    <div class="text-center mt-4">
+        <button class="btn btn-link text-decoration-none text-muted fw-bold" onclick="toggleAuthMode()" style="font-size: 0.9rem;">
+            ¿No tienes cuenta? <span class="text-primary">Regístrate</span>
+        </button>
+    </div>
+</section>
         <section id="pantalla-menu" class="pantalla p-4 d-none text-center">
             <h5 class="text-muted text-uppercase small ls-1">Panel de Estudiante</h5>
             <h2 class="fw-bold mb-4">Hola, <span id="nombre-alumno-display" class="text-primary">Alumno</span></h2>
